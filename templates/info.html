@@ -1,0 +1,128 @@
+{% extends 'home.html' %}
+
+{% block body %}
+<div class="container position-relative ">
+    {% include 'sessions_info_component.html' %}
+    <div class="row text-center">
+        <h1>INFORMAZIONI UTENTE</h1>
+    </div>
+    <br>
+    <div class="row align-items-end mt-2 justify-content-center">
+        <div class="col-md-3">
+            <h3>{{row.name}}</h3>
+        </div>
+        <div class="col-md-3">
+            <h3>{{row.surname}}</h3>
+        </div>
+    </div>
+    <hr>
+    <div class="d-lg-flex d-md-inline-block  mt-4 justify-content-evenly ">
+        <br>
+        <div class="d-inline-block fs-5 align-self-center">
+            <dt>Codice :</dt>
+            <dd>{{row.code}}</dd>
+            <hr>
+            <dt>Età :</dt>
+            <dd>{{year.year - row.dob.year - ((year.month, year.day) < (row.dob.month, row.dob.day))}}</dd>
+            <hr>
+            <dt>Sesso :</dt>
+            <dd>
+                {% if row.sex == 'F' %}
+                    Femmina
+                {% else %}
+                    Maschio
+                {% endif %}
+            </dd>
+            
+        </div>
+        <br>
+        <div class="d-inline-block fs-5">
+            <dt class="mb-1">Condizioni fisiche :</dt>
+            <dd>
+                {% set a = 'Nessuna informazione' %}
+                {% if row.info1 != "" %}
+                    {% set a = row.info1 %}
+                {% endif %}
+                <textarea cols="30" rows="3" class="rounded p-2 " style="resize: none;" readonly>{{a}}</textarea>
+            </dd>
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-primary btn-sm mt-2 mb-3" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                Modifica
+            </button>
+            <dt class="mb-1">Condizioni di salute :</dt>
+            <dd>
+                {% set a = 'Nessuna informazione' %}
+                {% if row.info2 != "" %}
+                    {% set a = row.info2 %}
+                {% endif %}
+                <textarea cols="30" rows="3" class="rounded p-2" style="resize: none;" readonly>{{a}}</textarea>
+            </dd>
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#staticBackdrop2">
+                Modifica
+            </button>
+            
+        </div>
+    </div>
+    
+    <div class="row mt-4 justify-content-between">
+        <div class="col-sm-3">
+            <a href="{{url_for('search_user')}}" class="btn btn-light btn-lg" role="button">Cerca utente</a>
+        </div>
+        <div class="col-sm-3">
+            <a href="{{url_for('choose_workout')}}" class="btn btn-light btn-outline-primary  btn-lg" role="button">Scegli allenamento</a>
+        </div>
+        
+    </div>
+
+    
+
+    
+</div>
+
+<!-- Modal INFO 1 -->
+<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+    <div class="modal-content">
+        <form action="/user" method="post" name="form1">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-black " id="staticBackdropLabel">Condizioni fisiche :</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="modifica1" maxlength="250" name="modifica1" style="resize:none;height: 100px">{{row.info1}}</textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                <input class="btn btn-primary " name="form1-submit" type="submit" value="Invia">
+            </div>
+        </form>
+    </div>
+    </div>
+</div>
+<!--    MODAL INFO2    -->
+<div class="modal fade" id="staticBackdrop2" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+    <div class="modal-content">
+        <form action="/user" method="post" name="form2">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5 text-black " id="staticBackdropLabel">Condizioni di salute :</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <textarea class="form-control" id="modifica2" maxlength="250" name="modifica2" style="resize:none;height: 100px">{{row.info2}}</textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+                <input class="btn btn-primary " name="form2-submit" type="submit" value="Invia">
+            </div>
+        </form>
+    </div>
+    </div>
+</div>
+
+
+
+<script src="{{url_for('static',filename='sessions_info.js')}}"></script>
+
+{% endblock %}

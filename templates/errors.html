@@ -1,0 +1,52 @@
+
+<div class="text-center col-md-6" style="height:75px;">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                {% for cat,msg in messages %}
+                    {% if cat == "info"%}
+                        <div class="alert alert-info" role="alert">{{ msg|safe }}</div>
+                    {% elif cat == "disconnected"%}
+                        <div class="position-absolute top-50 start-50 text-black ">
+                            <div class="modal" tabindex="-1" style="display: block;">
+                                <div class="modal-dialog">
+                                  <div class="modal-content">
+                                    <div class="modal-header">
+                                      <h5 class="modal-title">Attenzione!</h5>
+                                    </div>
+                                    <div class="modal-body">
+                                      <p>Devi essere connesso a un visore!</p>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <a href="{{url_for('connection')}}" class="btn btn-lg btn-danger">Connetti visore</a>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                        </div>
+                    {% elif cat == "session_alert" %}
+                      <div class="position-absolute top-50 start-50 text-black ">
+                        <div class="modal" tabindex="-1" style="display: block;">
+                            <div class="modal-dialog">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title">Attenzione!</h5>
+                                </div>
+                                <div class="modal-body">
+                                  <p>È presente una sessione non conclusa: </p>
+                                </div>
+                                <div class="modal-footer justify-content-between">
+                                    <a href="{{url_for('continue_session')}}" class="btn btn-lg btn-outline-primary">Riprendi sessione</a>
+                                    <a href="{{url_for('restart_session')}}" class="btn btn-lg btn-danger">Inizia una nuova sessione</a>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                      </div>
+                    {% else %}
+                        <div class="alert alert-info" role="alert">{{ msg }}</div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    
+</div>

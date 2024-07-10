@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <div class="container position-relative ">
+        {% include 'sessions_info_component.html'%}
+        <div class="text-center">
+            <h1>NUOVO ALLENAMENTO</h1>
+            <p class="fs-4">Tipologia forza</p>
+        </div>
+        <form action="{{url_for('new_training')}}" method="post">
+            <div class="mt-2 row text-center justify-content-evenly border rounded">
+                {{form.csrf_token}}
+                <div class="mt-2 row justify-content-center mb-3">
+                    <div class="col-md-5">
+                        <dt class="fs-5 ms-2">{{form.ex1.label}}</dt>
+                        <div class="form-check mt-4">
+                            <dd>
+                                {% for subfield in form.ex1 %}
+                                    <div class="mt-2">
+                                        {{subfield.label(class_="form-check-label fs-5")}}
+                                        {{subfield(class_="form-check-input fs-5")}}    
+                                    </div>
+                                {% endfor %}
+                            </dd>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <dt class="fs-5 ms-2">{{form.ex2.label}}</dt>
+                        <div class="form-check mt-4">
+                            <dd>
+                                {% for subfield in form.ex2 %}
+                                    <div class="mt-2">
+                                        {{subfield.label(class_="form-check-label fs-5")}}
+                                        {{subfield(class_="form-check-input fs-5")}}
+                                    </div>
+                                {% endfor %}
+                            </dd>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row justify-content-center mb-3">
+                    <div class="col-md-5">
+                        <dt class="fs-5 ms-2">{{form.ex3.label}}</dt>
+                        <div class="form-check mt-4">
+                            <dd>
+                                {% for subfield in form.ex3 %}
+                                <div class="mt-2">
+                                    {{subfield.label(class_="form-check-label fs-5")}}
+                                    {{subfield(class_="form-check-input fs-5")}}
+                                </div>
+                                {% endfor %}
+                            </dd>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <dt class="fs-5 ms-2">{{form.ex4.label}}</dt>
+                        <div class="form-check mt-4">
+                            <dd>
+                                {% for subfield in form.ex4 %}
+                                    <div class="mt-2">
+                                        {{subfield.label(class_="form-check-label fs-5")}}
+                                        {{subfield(class_="form-check-input fs-5")}}
+                                    </div>
+                                {% endfor %}
+                            </dd>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row justify-content-center mb-3">
+                    <div class="col-md-5">
+                        <dt class="fs-5 ms-2">{{form.ex5.label}}</dt>
+                        <div class="form-check mt-4">
+                            <dd>
+                                {% for subfield in form.ex5 %}
+                                    <div class="mt-2">
+                                        {{subfield.label(class_="form-check-label fs-5")}}
+                                        {{subfield(class_="form-check-input fs-5")}}
+                                    </div>
+                                {% endfor %}
+                            </dd>
+                        </div>
+                    </div>
+                    <div class="col-md-5"></div>
+                </div>
+            </div>
+
+            <div class="row mt-2 p-2 justify-content-between mx-4">
+                <div class="col-sm-3">
+                    <a href="{{url_for('search_user')}}" class="btn btn-light btn-lg" role="button">Cerca utente</a>
+                </div>
+                <div class="col-sm-3">
+                    <input class="btn btn-light btn-outline-primary btn-lg" type="submit" value="Invia">
+                </div>
+                
+            </div>
+        </form>
+    
+        {% include "errors.html" %}
+
+      
+    </div>
+    
+<!--da aggiungere session -->{% endblock %}

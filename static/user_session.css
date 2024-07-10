@@ -1,0 +1,32 @@
+
+  
+  
+  /**
+    Component
+  **/
+  
+  
+  
+  .card-input-element {
+      display: none;
+  }
+  
+  .card-input {
+      margin: 10px;
+      padding: 00px;
+      height: 100%;
+  }
+  
+  .card-input:hover {
+      cursor: pointer;
+  }
+
+  .disabled.card-input{
+    cursor: default;
+    opacity: 0.6;
+  }
+  
+  .card-input-element:checked + .card-input {
+       box-shadow: 0 0 10px 5px #1b2350;
+   }
+  

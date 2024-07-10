@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block head %}
+    <style>
+        .modal-backdrop{
+            opacity: 0.5 !important;
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="text-center mt-2">
+        <h1>RICERCA UTENTE</h1>
+
+    </div>
+    <div class="mt-4">
+        <div class="row text-center fs-4 p-1">
+            <p>Utilizza il codice univoco dell'utente per recuperare le sue informazioni.</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-md-7 center-screen">
+                <form action="{{url_for('search_user')}}" method="post">
+                    <div class="input-group mb-3">
+                        <input type="text" name="codice" id="codice" autocomplete="code" class="form-control" placeholder="Codice" aria-label="Codice" aria-describedby="cerca">
+                        <button class="btn btn-primary border border-2" type="submit" id="cerca">Cerca</button>
+                    </div>
+                    
+                </form>
+            </div>
+            {% include "errors.html" %}
+            
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,107 @@
+
+{% extends 'home.html' %}
+
+
+{% block body %}
+    <div class="container">
+        <div class="text-center mt-2">
+            <h1>FORM NUOVI UTENTI</h1>
+        </div>
+        <form action="{{url_for('form')}}" method="post" novalidate>
+            {{form.csrf_token}}
+            <div class="row p-2 mt-2 justify-content-center ">
+                <div class="col-md-5">
+                    {{form.name.label(class_='form-label')}}
+                    {{form.name(class_='form-control',autocomplete_='first-name')}}
+                    <ul class="errors mt-1" style="height:5px;">
+                    {% if form.name.errors %}
+                        {% for error in form.name.errors %}
+                            <li>{{error}}</li>
+                        {% endfor %}
+                    {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-5">
+                    {{form.surname.label(class_='form-label')}}
+                    {{form.surname(class_='form-control',autocomplete_='family-name')}}
+                    <ul class="errors mt-1" style="height:5px">
+                    {% if form.surname.errors %}
+                        {% for error in form.surname.errors %}
+                            <li>{{error}}</li>
+                        {% endfor %}
+                    {% endif %}
+                    </ul>
+                </div>
+            </div>
+            <div class="row p-2 mt-2 justify-content-center">
+                <div class="col-md-4">
+                    {{form.code.label(class_='form-label')}}
+                    {{form.code(class_='form-control',autocomplete_='off')}}
+                    <ul class="errors mt-1" style="height:5px">
+                    {% if form.code.errors %}
+                        {% for error in form.code.errors %}
+                            <li>{{error}}</li>
+                        {% endfor %}
+                    {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="col-md-3">
+                    {{form.dob.label(class_='form-label')}}
+                    {{form.dob(class_='form-control')}}
+                    <ul class="errors mt-1" style="height:5px">
+                    {% if form.dob.errors %}
+                        
+                            {% for error in form.dob.errors %}
+                                <li>{{error}}</li>
+                            {% endfor %}
+                    {% endif %}
+                    </ul>
+                </div>
+                <div class="col-md-1"></div>
+                <div class="col-md-2">
+                    {{form.sex.label(class_='form-label')}}
+                    {{form.sex(class_='form-select')}}
+                </div>
+            </div>
+            <div class="row mt-2 p-2 justify-content-center">
+                <div class="col-md-5">
+                    {{form.info1.label(class_='form-label')}}
+                    {{form.info1(class_='form-control',placeholder_='Nessuna informazione',style_='resize:none;height: 100px')}}
+                    <ul class="errors mt-1" style="height:5px;">
+                        {% if form.info1.errors %}
+                            {% for error in form.info1.errors %}
+                                <li>{{error}}</li>
+                            {% endfor %}
+                        {% endif %}
+                        </ul>
+                </div>
+                <div class="col-md-5">
+                    {{form.info2.label(class_='form-label')}}
+                    {{form.info2(class_='form-control',placeholder_='Nessuna informazione',style_='resize:none;height: 100px')}}
+                    <ul class="errors mt-1" style="height:5px">
+                        {% if form.info2.errors %}
+                            {% for error in form.info2.errors %}
+                                <li>{{error}}</li>
+                            {% endfor %}
+                        {% endif %}
+                        </ul>
+                </div>
+            </div>
+
+            
+            <div class="row mt-4 justify-content-between ">
+                <div class="col-sm-3">
+                    <a href="{{url_for('search_user')}}" class="btn btn-light btn-lg" role="button">Cerca utente</a>
+                </div>
+                <div class="col-sm-3">
+                    <input class="btn btn-light btn-lg" type="reset" value="Reset">
+                <input class="btn btn-primary btn-lg" type="submit" value="Invia">
+                </div>
+                
+            </div>
+            
+        </form>
+        
+    </div>
+{% endblock %}
