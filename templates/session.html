@@ -2,11 +2,9 @@
 
 {% block body %}
 <div class="container position-relative">
-    {% include 'sessions_info_component.html' %}
     <div class="mt-1">
         <h1>SESSIONE IN CORSO</h1>
     </div> 
-    <!--
     <div class="row mt-4">
         <div class="col">
             <h3>{{user.name}}</h3>
@@ -18,58 +16,39 @@
             <h3>{{user.code}}</h3>
         </div>
     </div>
-    -->
     <hr>
-    <div class="d-lg-flex d-md-inline-block  mt-4 justify-content-evenly ">
-        <div id="exercises">
-            {% for ex in data %}
-                <div>{{ex.name}} <i id="{{ex.id}}" class="ms-2 fa-xl fa-solid fa-spinner fa-spin"></i></div>
-                <hr>
-            {% endfor %}
+    <form action="{{url_for('save') }}" id="form" method="post">
+        <input type="hidden" name="user_id" value="{{user.code}}">
+        <div class="d-lg-flex d-md-inline-block mt-4 justify-content-evenly">
+            <div id="exercises">
+                <table class="table table_custom text-white">
+                    <tbody>
+                    {% for ex in data %}
+                    <tr>
+                        <td>{{ex.name}}</td>
+                        <td><i id="{{ex.id}}" class="mx-4 fa-xl fa-solid fa-spinner fa-spin"></i></td>
+                        <td><input name="ex_{{ex.id}}" id="ex_{{ex.id}}" type="text" size="10" maxlength="10"> kg/Res</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div id="controller" class="mt-4 d-block">
+                <h3 id="testo_pausa" class="d-none">In pausa</h3>
+                <div class="button-container mt-4">
+                    <button class="btn btn-lg btn-light mx-2" disabled id="play"><i class="fa-solid fa-play"></i></button>
+                    <button class="btn btn-lg btn-danger mx-2" id="pause"><i class="fa-solid fa-pause"></i></button>
+                </div>
+            </div> 
         </div>
-    </div>
-    <div class="row mt-4 justify-content-end">
-        <div class="col-sm-3">
-            <button id="next" class="btn btn-lg btn-outline-primary" disabled>Avanti</button>
+        <div class="row mt-4 justify-content-end">
+            <div class="col-sm-3">
+                <input id="next" class="btn btn-lg btn-outline-primary" type="submit" value="Avanti" disabled>
+            </div>
+            
         </div>
-        
-    </div>
+    </form>
+    
 </div>
-
-{% block socketio %}
-<script>
-
-    var socket = io.connect('http://' + document.domain + ':' + location.port);
-
-    socket.on('connect', function() {
-        console.log('Connected to server...');
-    });
-
-    socket.on("disconnect-vr",function(){
-        console.log("socket disconnected");
-        alert("Il visore è stato disconnesso.");
-        window.location.href = "/connect-vr"; 
-    });
-
-    socket.on("exercise",function(id){
-        console.log("finished "+id);
-        document.getElementById(id).setAttribute('class','ms-2 fa-xl fa-solid fa-check');
-    });
-
-    socket.on("end_session",function(){
-        console.log("Session ended");
-        var button = document.getElementById("next")
-        button.disabled = false;
-    });
-        
-    document.getElementById("next").addEventListener("click", function() {
-        alert("La sessione è terminata !");
-        window.location.href = "/user"; // Change to your desired URL
-    });
-
-</script>
-{% endblock %}
-
-
 
 {% endblock %}

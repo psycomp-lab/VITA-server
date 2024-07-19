@@ -2,11 +2,11 @@ from app import app
 from flask import request,redirect,url_for,flash,session,render_template
 import re
 from datetime import date,datetime
-from app.models import db,User,Session,Training,Exercise,TrainingExercise
+from app.models import db,User,Session,Training,Exercise,TrainingExercise,UserExerciseInfo
 from sqlalchemy import func
 from app.form import Registration,New_Workout
 from app.utils import serialize_list,get_exercises
-from app.socket_udp import client_ips,send_connect,is_connected,send_data
+from app.socket_udp import client_ips,send_connect,is_connected,send_data,saved_data
 
 """
 #Funzione usata da Fetch per riprendere le vecchie sessioni (da testare)
@@ -142,7 +142,7 @@ def choose_workout():
         
         # Get all the trainings
         for n in range(1, n_trainings + 1):
-            names = []  # List of exercises" names
+            names = []  # List of exercises names
             training = Training.query.get(n)  # Training
             exercises = TrainingExercise.query.filter_by(training_id=training.id).all()  # Exercises in training
             for ex in exercises:
@@ -167,6 +167,7 @@ def choose_workout():
         app.logger.info("Accessed DB")
         
         msg = f'SESSION {code} {n_session} '
+
         if request.method == "POST":
             # Handle the POST request
             exercises_list = serialize_list(get_exercises(request.form.get("workout")))
@@ -179,7 +180,7 @@ def choose_workout():
             return redirect(url_for("session_start"))
             
         # Render the template for the GET request
-        return render_template("choose_workout.html", workouts=workouts, n_session=n_session)
+        return render_template("choose_workout.html", workouts=workouts, n_session=n_session,dev=False)
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
@@ -198,14 +199,16 @@ def new_training(n):
                 new_session = Session(code, n, exercise_id)
                 db.session.add(new_session)
                 msg += exercise_id + " "
-            db.session.commit()  # Fixed typo from db.commit() to db.session.commit()
+            db.session.commit()
             send_data(msg)
             return redirect(url_for("session_start"))
         else:
-            return render_template("new_workout.html", form=exs, n_session=n)  # Pass n_session to template
+            return render_template("new_workout.html", form=exs, n=n)  # Pass n_session to template
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
+    
+
 
 
 @app.route("/restart_session")
@@ -238,8 +241,8 @@ def continue_session():
 
         for ex in exercises:
             # Ensure you fetch the exercise details by its ID
-            msg += str(ex.exercise)
-        print(msg)
+            msg += str(ex.exercise)+" "
+        send_data(msg)
         return redirect(url_for("session_start"))
     else:
         return "No session found", 404
@@ -248,14 +251,26 @@ def continue_session():
 
 @app.route("/user/session")
 def session_start():
+    global saved_data
     code = session["code"]
     if code and is_connected():
-        '''vr_data = session.get("data")
-        #send vr dict data
-        send_data(json.dumps(vr_data).encode('utf-8'))
-        return render_template("session.html",user = vr_data["id"],data = vr_data["list_exercises"])'''
-        return 'hi'
+        list_exercises = []
+        for id in saved_data["list_exercises"]:
+            list_exercises.append(Exercise.query.filter_by(id=int(id)).first())
+        user = User.query.filter_by(code=saved_data["id"]).first()
+        return render_template("session.html",user = user,data=list_exercises)
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
     
+@app.route("/save_session",methods=["POST"])
+def save():
+    form_data = request.form
+    user_code = form_data.get("user_id")
+    exercise_results = {key: value for key, value in form_data.items() if key.startswith('ex')}
+    for key, val in exercise_results.items():
+        ex = int(key.split("_")[1])
+        res = UserExerciseInfo(user_code,ex,val)
+        db.session.merge(res)
+        db.session.commit()
+    return render_template("session_complete.html")
