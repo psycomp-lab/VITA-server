@@ -1,9 +1,9 @@
 from app import app
 from flask import request,redirect,url_for,flash,session,render_template
 import re
-import json
 from datetime import date,datetime
 from app.models import db,User,Session,Training,Exercise,TrainingExercise
+from sqlalchemy import func
 from app.form import Registration,New_Workout
 from app.utils import serialize_list,get_exercises
 from app.socket_udp import client_ips,send_connect,is_connected,send_data
@@ -93,13 +93,9 @@ def form():
             # Create user object
             new_user = User(name=name, surname=surname, code=code, dob=dob, sex=sex, info1=info1, info2=info2)
             db.session.add(new_user)
-
-            """ Create new session
-            new_session = Session(user_id=code)
-            db.session.add(new_session)"""
-
             db.session.commit()
             app.logger.info("Created new user.")
+
         except Exception as e:
             app.logger.error(f"Error in form(): {e}")
             return redirect("/form")
@@ -170,22 +166,18 @@ def choose_workout():
 
         app.logger.info("Accessed DB")
         
-        
+        msg = f'SESSION {code} {n_session} '
         if request.method == "POST":
             # Handle the POST request
             exercises_list = serialize_list(get_exercises(request.form.get("workout")))
             for ex in exercises_list:
                 new_session = Session(code, n_session, ex["id"])
                 db.session.add(new_session)
+                msg += str(ex["id"])+" "
             db.session.commit()
-            #data = {"id":code,"list_exercises":exercises_list}
-            # Maurizio-start
-            data = {"id": code, "list_exercises": exercises_list, "session_number" : n_session} # added session number
-            # Maurizio-end
-            session["data"] = data
-
+            send_data(msg)
             return redirect(url_for("session_start"))
-        
+            
         # Render the template for the GET request
         return render_template("choose_workout.html", workouts=workouts, n_session=n_session)
     else:
@@ -193,32 +185,36 @@ def choose_workout():
         return redirect(request.url)
     
 
-@app.route("/user/create_workout",methods=["GET","POST"])
-def new_training():
+@app.route("/user/create_workout/<n>", methods=["GET", "POST"])
+def new_training(n):
     code = session.get("code")
     if code and is_connected():        
         exs = New_Workout()
+        msg = f'SESSION {code} {n} '
         if exs.validate_on_submit():
-            exercises = []
+    
             for i in range(1, 6):  # Assuming you have 5 exercises
                 exercise_id = request.form.get(f"ex{i}")
-                exercise = Exercise.query.get(exercise_id)
-                if exercise:
-                    exercises.append(exercise.serialize())
-            # Maurizio-start
-            data = {"id": code, "list_exercises": exercises, "session_number" : 1} # added session number
-            # Maurizio-end
-            session["data"] = data    
+                new_session = Session(code, n, exercise_id)
+                db.session.add(new_session)
+                msg += exercise_id + " "
+            db.session.commit()  # Fixed typo from db.commit() to db.session.commit()
+            send_data(msg)
             return redirect(url_for("session_start"))
         else:
-            return render_template("new_workout.html",form=exs)
+            return render_template("new_workout.html", form=exs, n_session=n)  # Pass n_session to template
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
 
+
 @app.route("/restart_session")
 def restart_session():
-    sessions = Session.query.filter_by(user_id=session["code"]).order_by(Session.number.desc()).all()
+    
+    user_id = session.get("code")
+    max_number = Session.query.with_entities(func.max(Session.number)).filter_by(user_id=user_id).scalar()
+    sessions = Session.query.filter_by(user_id=user_id, number=max_number).all()
+
     for s in sessions:
         db.session.delete(s)
     db.session.commit()
@@ -238,15 +234,12 @@ def continue_session():
         # Find all exercises with the same session number
         exercises = Session.query.filter_by(user_id=user_code, number=n).all()
         
-        serialized_exercises = []
+        msg = f'SESSION {user_code} {n} '
+
         for ex in exercises:
             # Ensure you fetch the exercise details by its ID
-            exercise = Exercise.query.get(ex.exercise)
-            if exercise:
-                serialized_exercises.append(exercise.serialize())
-        
-        data = {"id": user_code, "list_exercises": serialized_exercises, "session_number" : n}
-        session["data"] = data  # Store only serializable data in the session
+            msg += str(ex.exercise)
+        print(msg)
         return redirect(url_for("session_start"))
     else:
         return "No session found", 404
@@ -257,18 +250,11 @@ def continue_session():
 def session_start():
     code = session["code"]
     if code and is_connected():
-        vr_data = session.get("data")
-        # Maurizio-start:
+        '''vr_data = session.get("data")
         #send vr dict data
-        # send_data("SESSION", json.dumps(vr_data))
-        #print(session)
-        exercise_string = ""
-        for exercise in session["data"]["list_exercises"]:
-            exercise_string += str(exercise["id"]) + " "
-        exercise_string = exercise_string[:-1]
-        send_data("SESSION", code + " " + str(session["data"]["session_number"]) + " " + exercise_string)
-        # Maurizio-end
-        return render_template("session.html",user = vr_data["id"],data = vr_data["list_exercises"])
+        send_data(json.dumps(vr_data).encode('utf-8'))
+        return render_template("session.html",user = vr_data["id"],data = vr_data["list_exercises"])'''
+        return 'hi'
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
