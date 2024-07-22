@@ -7,6 +7,7 @@ from sqlalchemy import func
 from app.form import Registration,New_Workout
 from app.utils import serialize_list,get_exercises
 from app.socket_udp import client_ips,send_connect,is_connected,send_data
+import json
 
 """
 #Funzione usata da Fetch per riprendere le vecchie sessioni (da testare)
@@ -250,11 +251,11 @@ def continue_session():
 def session_start():
     code = session["code"]
     if code and is_connected():
-        '''vr_data = session.get("data")
+        vr_data = session.get("data")
         #send vr dict data
         send_data(json.dumps(vr_data).encode('utf-8'))
-        return render_template("session.html",user = vr_data["id"],data = vr_data["list_exercises"])'''
-        return 'hi'
+        return render_template("session.html",user = vr_data["id"],data = vr_data["list_exercises"])
+        #return 'hi'
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
