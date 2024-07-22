@@ -10,7 +10,7 @@ socketio = SocketIO(app, async_mode='threading')
 
 @socketio.on('Continue')
 def handle_continue():
-    print('Avvisa visore continua')
+    send_data("END_REST")
 
 @socketio.on('Pause')
 def handle_pause():
@@ -68,10 +68,12 @@ def get_local_ip():
         s.close()
     return IP
 
+    
 # Send a connect message to the client
 def send_connect(client):
     global CONNECTED, CONNECTED_CLIENT, last_connection_checked
     try:
+        
         recv_socket.sendto(CONNECT_MESSAGE, client)
         msg, addr = recv_socket.recvfrom(1024 ** 2)
         if msg == CONNECT_ACK and addr == client:
@@ -88,7 +90,7 @@ def send_beacon_packets():
     while True:
         if not CONNECTED:
             try:
-                sock.sendto(BEACON_MESSAGE, ("127.0.0.1", BROADCAST_PORT))
+                sock.sendto(BEACON_MESSAGE, (broadip, BROADCAST_PORT))
                 print("[BEACON] sent beacon for discovery")
             except Exception as e:
                 print(f"Failed to send beacon packet: {e}")
@@ -134,9 +136,9 @@ def main():
             socketio.emit("end_session")
             break
 
-        msg = "WAITING "+ saved_data["list_exercises"][index] +" "+ saved_data["id"]+" "+saved_data["session"]
+        # msg = "WAITING "+ saved_data["list_exercises"][index] +" "+ saved_data["id"]+" "+saved_data["session"]
         try:
-            recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
+            # recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
             msg, addr = recv_socket.recvfrom(1024 ** 2)
 
             if addr == CONNECTED_CLIENT:
@@ -169,7 +171,8 @@ def main():
             print(f"Error while checking connection: {e}")
 
         # Check if the connection has timed out
-        if time.time() - last_connection_checked > CHECK_INTERVAL_SECONDS:
+        elapsed_time = time.time() - last_connection_checked
+        if elapsed_time > CHECK_INTERVAL_SECONDS:
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("disconnect-vr")

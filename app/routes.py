@@ -161,7 +161,7 @@ def choose_workout():
 
             for s in sessions:
                 if s.result is None:
-                    flash("Unfished session","session_alert")
+                    flash("Unfinished session","session_alert")
             n_session += 1
 
         app.logger.info("Accessed DB")
@@ -176,6 +176,7 @@ def choose_workout():
                 db.session.add(new_session)
                 msg += str(ex["id"])+" "
             db.session.commit()
+            print("************* sending session data to client")
             send_data(msg)
             return redirect(url_for("session_start"))
             
@@ -200,6 +201,7 @@ def new_training(n):
                 db.session.add(new_session)
                 msg += exercise_id + " "
             db.session.commit()
+            print("************* sending session data (2) to client")
             send_data(msg)
             return redirect(url_for("session_start"))
         else:
@@ -242,12 +244,11 @@ def continue_session():
         for ex in exercises:
             # Ensure you fetch the exercise details by its ID
             msg += str(ex.exercise)+" "
+        print("************* sending session start to client")
         send_data(msg)
         return redirect(url_for("session_start"))
     else:
         return "No session found", 404
-
-
 
 @app.route("/user/session")
 def session_start():
