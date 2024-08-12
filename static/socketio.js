@@ -12,31 +12,6 @@ document.addEventListener("DOMContentLoaded", function() {
         window.location.href = "/connect-vr"; 
     })
 
-    socket.on("exercise",function(id){
-        console.log("finished "+id)
-        document.getElementById(id).setAttribute('class','ms-2 fa-xl fa-solid fa-check');
-    })
-    
-    const pause = document.getElementById("pause");
-
-    const play = document.getElementById("play");
-
-
-    if(pause !== null && play !== null){
-        pause.addEventListener("click", () => {
-            pause.disabled = true;
-            play.disabled = false;
-            document.getElementById("testo_pausa").classList.remove("d-none");
-            socket.emit("Pause");
-        });
-        play.addEventListener("click", () => {
-            play.disabled = true;
-            pause.disabled = false;
-            document.getElementById("testo_pausa").classList.add("d-none");
-            socket.emit("Continue");
-        })
-    }
-    
     socket.on("exercise", function(id) {
         console.log("Finished exercise: " + id);
         document.getElementById(id).setAttribute('class', 'mx-4 fa-xl fa-solid fa-check');
@@ -50,6 +25,34 @@ document.addEventListener("DOMContentLoaded", function() {
         button.disabled = false;
     });
 
-    const next = document.getElementById("next");
+
+    const pause = document.getElementById("pause");
+
+    const play = document.getElementById("play");
+    
+    if(pause !== null && play !== null){
+        pause.addEventListener("click", () => {
+            pause.disabled = true;
+            play.disabled = false;
+            document.getElementById("testo_pausa").classList.remove("d-none");
+            socket.emit("pause");
+        });
+        play.addEventListener("click", () => {
+            play.disabled = true;
+            pause.disabled = false;
+            document.getElementById("testo_pausa").classList.add("d-none");
+            socket.emit("continue");
+        })
+    }
+    
+    document.getElementById("break_extend").addEventListener("click",function(){
+        socket.emit(this.id);
+    });
+
+    document.getElementById("break_interrupt").addEventListener("click",function(){
+        socket.emit(this.id);
+    });
+    
+
 
 });

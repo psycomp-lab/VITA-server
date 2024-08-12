@@ -36,8 +36,16 @@
             <div id="controller" class="mt-4 d-block">
                 <h3 id="testo_pausa" class="d-none">In pausa</h3>
                 <div class="button-container mt-4">
-                    <button class="btn btn-lg btn-light mx-2" disabled id="play"><i class="fa-solid fa-play"></i></button>
-                    <button class="btn btn-lg btn-danger mx-2" id="pause"><i class="fa-solid fa-pause"></i></button>
+                    <button class="btn btn-lg btn-light mx-2" type="button" disabled id="play"><i class="fa-solid fa-play"></i></button>
+                    <button class="btn btn-lg btn-danger mx-2" type="button" id="pause"><i class="fa-solid fa-pause"></i></button>
+                </div>
+                <div class="mt-4 justify-content-center">
+                    <h3>Allunga la pausa</h3>
+                    <button class="break btn w-50 btn-light mx-2" type="button" id="break_extend"><i class="fa-solid fa-forward"></i></button>
+                </div>
+                <div class="mt-4 justify-content-center">
+                    <h3>Interrompi la pausa</h3>
+                    <button class="break btn w-50 btn-light mx-2" type="button" id="break_interrupt"><i class="fa-solid fa-stop"></i></button>
                 </div>
             </div> 
         </div>

@@ -8,13 +8,22 @@ from socket import inet_aton, inet_ntoa
 
 socketio = SocketIO(app, async_mode='threading')
 
-@socketio.on('Continue')
+@socketio.on('continue')
 def handle_continue():
     print('Avvisa visore continua')
 
-@socketio.on('Pause')
+@socketio.on('pause')
 def handle_pause():
     print('Avvisa visore pausa')
+
+@socketio.on("break_interrupt")
+def break_interrupt():
+    print("Avvisa visore di interrompere la pausa")
+
+@socketio.on("break_extend")
+def break_extend():
+    print("Avvisa il visore di allungare la pausa")
+
 
 MESSAGE_PORT = 50069
 BROADCAST_PORT = 50068
@@ -132,6 +141,7 @@ def main():
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("end_session")
+            print("SENT END SESSION")
             break
 
         msg = "WAITING "+ saved_data["list_exercises"][index] +" "+ saved_data["id"]+" "+saved_data["session"]

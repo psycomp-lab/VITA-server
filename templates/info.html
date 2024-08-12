@@ -1,6 +1,7 @@
 {% extends 'home.html' %}
 
 {% block body %}
+<input type="hidden" id="user_id" value="{{row.code}}">
 <div class="container position-relative ">
     {% include 'sessions_info_component.html' %}
     <div class="row text-center">
@@ -122,7 +123,37 @@
 </div>
 
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const user_id = document.getElementById("user_id").value
+        const cont = document.getElementById("buttons")
 
-<script src="{{url_for('static',filename='sessions_info.js')}}"></script>
+        fetch('/get_sessions/'+user_id)
+        .then(response => response.json())
+        .then(data =>{
+            sessions = data.list;
+            console.log(sessions);
+            if (sessions.length === 0) {
+                document.getElementById('sessions').innerHTML = "<p>Non ci sono sessioni concluse</p>";
+            } else {
+                sessions.forEach(session => {
+                    const [x, id] = session;
 
+                    const button = document.createElement('button');
+                    button.className = 'btn-session';
+                    button.id = id+"_"+x;
+                    button.innerText = "Sessione "+x;
+                    button.classList.add("btn","btn-primary","mx-2","my-2");
+                    cont.appendChild(button);
+
+                    button.addEventListener("click", function(){
+                        window.location.href = "/download_csv/"+this.id;
+                    });
+
+                });
+            };
+        })
+        .catch(error => console.error('Error loading data : ', error));
+    });
+</script>
 {% endblock %}

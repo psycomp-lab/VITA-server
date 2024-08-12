@@ -1,5 +1,5 @@
 from app import app
-from flask import request,redirect,url_for,flash,session,render_template
+from flask import request,redirect,url_for,flash,session,render_template,jsonify,send_file
 import re
 from datetime import date,datetime
 from app.models import db,User,Session,Training,Exercise,TrainingExercise,UserExerciseInfo
@@ -7,19 +7,8 @@ from sqlalchemy import func
 from app.form import Registration,New_Workout
 from app.utils import serialize_list,get_exercises
 from app.socket_udp import client_ips,send_connect,is_connected,send_data,saved_data
-
-"""
-#Funzione usata da Fetch per riprendere le vecchie sessioni (da testare)
-@app.route("/get_sessions")
-def get_sessions():
-    sessions = Session.query.filter(Session.result.isnot(None)).all()
-    sessions_list = serialize_list(sessions)
-    for item in sessions_list:
-        if isinstance(item["result"], bytes):
-            item["result"] = item["result"].decode()
-    print(sessions_list)
-    return jsonify({"sessions": sessions_list})"""
-
+import csv
+import io
 
 @app.route("/")
 def welcome():
@@ -274,3 +263,60 @@ def save():
         db.session.merge(res)
         db.session.commit()
     return render_template("session_complete.html")
+
+
+@app.route("/get_sessions/<id>")
+def get_sessions(id):
+    print(id)
+    s = Session.query.filter_by(user_id=id).filter(Session.result.isnot(None)).order_by(Session.number.desc()).first()
+    out = []
+    if s:
+        for x in range(1,s.number+1):
+            out.append((x, id))
+    return jsonify({"list": out})
+
+@app.route('/download_csv/<n>')
+def create_csv(n):
+    parts = n.split('_')
+    user_id = parts[0]
+    session_number = parts[1]
+
+    try:
+        session_number = int(session_number)
+    except ValueError:
+        return "Invalid session number", 400
+
+    sessions = Session.query.filter_by(user_id=user_id, number=session_number).all()
+
+    if not sessions:
+        return "No sessions found", 404
+
+    data = io.StringIO()
+    writer = csv.writer(data)
+    
+    # Write headers if needed
+    writer.writerow(['Name', 'Surname', 'User ID', 'Session', 'Exercise', 'Result'])
+
+    for s in sessions:
+        
+        exercise = Exercise.query.filter_by(id=s.exercise).first()
+        user = User.query.filter_by(code=user_id).first()
+
+        print(exercise.name)
+        print(user.name)
+
+        if exercise and user:
+            exercise_name = exercise.name
+            user_name = user.name
+            user_surname = user.surname
+            result = s.result.decode() if s.result else "No result"
+            writer.writerow([user_name, user_surname, user_id, session_number, exercise_name, result])
+
+    data.seek(0)
+
+    return send_file(
+        io.BytesIO(data.getvalue().encode()),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'{user_id}_{session_number}.csv'
+    )
