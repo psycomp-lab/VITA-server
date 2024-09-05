@@ -23,15 +23,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
 
     if(pause !== null && play !== null){
-        pause.addEventListener("click", () => {
+        /*pause.addEventListener("click", () => {
             pause.disabled = true;
             play.disabled = false;
             document.getElementById("testo_pausa").classList.remove("d-none");
             socket.emit("Pause");
-        });
+        });*/
         play.addEventListener("click", () => {
             play.disabled = true;
-            pause.disabled = false;
+            pause.disabled = true;
             document.getElementById("testo_pausa").classList.add("d-none");
             socket.emit("Continue");
         })

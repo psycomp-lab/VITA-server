@@ -42,6 +42,7 @@ def send_data(msg):
     while True:
         try:
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
+            print("sent", msg)
             resp, addr = recv_socket.recvfrom(1024 ** 2)
             if addr == CONNECTED_CLIENT and resp == DATA_ACK:
                 print("[DATA] sent data to client")
@@ -141,6 +142,8 @@ def main():
             # recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
             msg, addr = recv_socket.recvfrom(1024 ** 2)
 
+            print("received:", msg.decode())
+
             if addr == CONNECTED_CLIENT:
                 last_connection_checked = time.time()
 
@@ -163,8 +166,8 @@ def main():
                             print(f"Updated session {number} for user {id} with result: {result}")
                         else:
                             print(f"No session found for user {id} with number {number}")
-                else:
-                    print(msg.decode())
+
+
         except socket.timeout:
             pass
         except Exception as e:
