@@ -8,16 +8,65 @@ from socket import inet_aton, inet_ntoa
 
 socketio = SocketIO(app, async_mode='threading')
 
+# Global flags and synchronization primitives
+PAUSE = False
+RESTART = False
+pause_lock = threading.Lock()
+restart_lock = threading.Lock()
+
 @socketio.on('restart')
-def handle_continue():
+def handle_restart():
     global RESTART
-    RESTART = True
-                                  
+    with restart_lock:
+        RESTART = True
+        print("RESTART received")
+
 @socketio.on('pause')
 def handle_pause():
     global PAUSE
-    PAUSE = True
+    with pause_lock:
+        PAUSE = True
+        print("PAUSE received")
 
+def send_restart_message():
+    global RESTART
+    while True:
+        with restart_lock:
+            if not RESTART:
+                break
+        try:
+            recv_socket.sendto(b"RESTART", CONNECTED_CLIENT)
+            print("SENT RESTART")
+            resp, _ = recv_socket.recvfrom(1024**2)
+            if resp == DATA_ACK:
+                print("RESTART ACK received")
+                with restart_lock:
+                    RESTART = False
+        except socket.timeout:
+            continue
+        except Exception as e:
+            print(f"Error while sending RESTART: {e}")
+            break
+
+def send_pause_message():
+    global PAUSE
+    while True:
+        with pause_lock:
+            if not PAUSE:
+                break
+        try:
+            recv_socket.sendto(b"PAUSE", CONNECTED_CLIENT)
+            print("SENT PAUSE")
+            resp, _ = recv_socket.recvfrom(1024**2)
+            if resp == DATA_ACK:
+                print("PAUSE ACK received")
+                with pause_lock:
+                    PAUSE = False
+        except socket.timeout:
+            continue
+        except Exception as e:
+            print(f"Error while sending PAUSE: {e}")
+            break
 
 MESSAGE_PORT = 50069
 BROADCAST_PORT = 50068
@@ -27,8 +76,7 @@ BEACON_ACK = b"BEACON_ACK"
 CONNECT_MESSAGE = b"CONNECT"
 CONNECT_ACK = b"CONNECT_ACK"
 DATA_ACK = b"DATA_ACK"
-PAUSE = False
-RESTART = False
+
 saved_data = {}
 client_ips = []
 
@@ -58,11 +106,9 @@ def send_data(msg):
 def is_connected():
     return CONNECTED
 
-# Get the local IP address
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        # Doesn't even have to be reachable
         s.connect(('10.255.255.255', 1))
         IP = s.getsockname()[0]
     except Exception as e:
@@ -72,7 +118,6 @@ def get_local_ip():
         s.close()
     return IP
 
-# Send a connect message to the client
 def send_connect(client):
     global CONNECTED, CONNECTED_CLIENT, last_connection_checked
     try:
@@ -82,11 +127,10 @@ def send_connect(client):
             print("[CONNECT] connected to client")
             CONNECTED = True
             CONNECTED_CLIENT = client
-            last_connection_checked = time.time()  # Get the time connection was received
+            last_connection_checked = time.time()
     except Exception as e:
         print(f"Failed connection to client: {e}")
 
-# Send beacon packets for client discovery
 def send_beacon_packets():
     broadip = inet_ntoa(inet_aton(get_local_ip())[:3] + b'\xff')
     while True:
@@ -97,7 +141,6 @@ def send_beacon_packets():
             except Exception as e:
                 print(f"Failed to send beacon packet: {e}")
 
-            # Receive ACK packets from clients and store their IP addresses
             try:
                 data, addr = recv_socket.recvfrom(1024 ** 2)
                 if data == BEACON_ACK:
@@ -107,66 +150,40 @@ def send_beacon_packets():
             except socket.timeout:
                 pass
 
-# Main function to manage connections and data
 def main():
-    global CONNECTED, CONNECTED_CLIENT, last_connection_checked,PAUSE,RESTART
+    global CONNECTED, CONNECTED_CLIENT, last_connection_checked
 
-    # Set the TTL value to 20 for broadcasting
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20)
 
-    # Create a UDP socket for receiving ACK packets
     recv_socket.bind(("", MESSAGE_PORT))
     print("[SOCKET] started socket for communication")
-
-    # Set a timeout for receiving ACK packets
     recv_socket.settimeout(TIMEOUT_SECONDS)
 
-    # Spawn a thread to send beacon packets
     beacon_thread = threading.Thread(target=send_beacon_packets)
     beacon_thread.start()
 
-    # Wait for a connection
     connection_event.wait()
 
     index = 0
     time.sleep(5)
-    # Check messages, connections and send SOCKETIO notifications
-    while CONNECTED:
-        if PAUSE:
-            # Send PAUSE message continuously until DATA_ACK is received
-            while PAUSE:
-                try:
-                    recv_socket.sendto(b"PAUSE", CONNECTED_CLIENT)
-                    print("SENT PAUSE")
-                    resp, _ = recv_socket.recvfrom(1024**2)
-                    if resp == DATA_ACK:
-                        print("PAUSE ACK received")
-                        PAUSE = False  # Exit the PAUSE loop
-                except socket.timeout:
-                    continue  # Continue sending PAUSE if no ACK received
-                except Exception as e:
-                    print(f"Error while sending PAUSE: {e}")
-        if RESTART:
-            # Send RESTART message continuously until DATA_ACK is received
-            while RESTART:
-                try:
-                    recv_socket.sendto(b"RESTART", CONNECTED_CLIENT)
-                    print("SENT RESTART")
-                    resp, _ = recv_socket.recvfrom(1024**2)
-                    if resp == DATA_ACK:
-                        print("RESTART ACK received")
-                        RESTART = False  # Exit the RESTART loop
-                except socket.timeout:
-                    continue  # Continue sending RESTART if no ACK received
-                except Exception as e:
-                    print(f"Error while sending RESTART: {e}")
 
-        if index >= len(saved_data["list_exercises"]):
+    while CONNECTED:
+        with pause_lock:
+            if PAUSE:
+                pause_thread = threading.Thread(target=send_pause_message)
+                pause_thread.start()
+        with restart_lock:
+            if RESTART:
+                restart_thread = threading.Thread(target=send_restart_message)
+                restart_thread.start()
+
+        if index >= len(saved_data.get("list_exercises", [])):
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("end_session")
             break
-        msg = "WAITING "+ saved_data["list_exercises"][index] +" "+ saved_data["id"]+" "+saved_data["session"]
+
+        msg = "WAITING "+ saved_data.get("list_exercises", [])[index] +" "+ saved_data.get("id", "")+" "+saved_data.get("session", "")
         try:
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
             msg, addr = recv_socket.recvfrom(1024 ** 2)
@@ -175,7 +192,6 @@ def main():
                 last_connection_checked = time.time()
 
                 if msg.decode().startswith("FINISHED_EXERCISE "):
-                    #CONTROLLO SUL MESSAGGIO
                     index += 1
                     print("***** received finished_exercise")
                     msg = msg.decode()
@@ -200,19 +216,14 @@ def main():
         except Exception as e:
             print(f"Error while checking connection: {e}")
 
-        # Check if the connection has timed out
         if time.time() - last_connection_checked > CHECK_INTERVAL_SECONDS:
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("disconnect-vr")
 
-# Save the received data
 def save_data(msg: str):
     global saved_data
     parts = msg.rstrip().split(" ")
     saved_data["id"] = parts[1]
     saved_data["session"] = parts[2]
-    list_exercises = []
-    for n in range(3, len(parts)):
-        list_exercises.append(parts[n])
-    saved_data["list_exercises"] = list_exercises
+    saved_data["list_exercises"] = parts[3:]
