@@ -224,7 +224,7 @@ def continue_session():
         n = highest_session.number
         
         # Find all exercises with the same session number
-        exercises = Session.query.filter_by(user_id=user_code, number=n).all()
+        exercises = Session.query.filter_by(user_id=user_code, number=n).filter(Session.result.is_(None)).all()
         
         msg = f'SESSION {user_code} {n} '
 
@@ -244,10 +244,17 @@ def session_start():
     code = session["code"]
     if code and is_connected():
         list_exercises = []
-        for id in saved_data["list_exercises"]:
-            list_exercises.append(Exercise.query.filter_by(id=int(id)).first())
+        sessions = Session.query.filter_by(user_id=code).order_by(Session.number.desc()).first()
+        if sessions is not None:
+            # Recupera tutte le sessioni con lo stesso numero
+            exercises_in_session = Session.query.filter_by(number=sessions.number, user_id=code).all()
+            # Aggiungi ogni esercizio alla lista
+            for ex in exercises_in_session:
+                exercise = Exercise.query.filter_by(id=ex.exercise).first()
+                if exercise:
+                    list_exercises.append(exercise)
         user = User.query.filter_by(code=saved_data["id"]).first()
-        return render_template("session.html",user = user,data=list_exercises)
+        return render_template("session.html",user = user,data=list_exercises,requested_ex=saved_data["list_exercises"])
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
@@ -259,21 +266,24 @@ def save():
     exercise_results = {key: value for key, value in form_data.items() if key.startswith('ex')}
     for key, val in exercise_results.items():
         ex = int(key.split("_")[1])
+        s = Session.query.filter_by(user_id=user_code).order_by(Session.number.desc()).first().number
+        session = Session.query.filter_by(user_id = user_code,number = s,exercise = ex).first()
+        session.info = val
         res = UserExerciseInfo(user_code,ex,val)
         db.session.merge(res)
         db.session.commit()
     return render_template("session_complete.html")
 
 
-@app.route("/get_sessions/<id>")
-def get_sessions(id):
-    print(id)
-    s = Session.query.filter_by(user_id=id).filter(Session.result.isnot(None)).order_by(Session.number.desc()).first()
-    out = []
-    if s:
-        for x in range(1,s.number+1):
-            out.append((x, id))
-    return jsonify({"list": out})
+@app.route("/get_sessions")
+def get_sessions():
+    if session.get("code"):
+        s = Session.query.filter_by(user_id=session.get("code")).filter(Session.result.isnot(None)).order_by(Session.number.desc()).first()
+        out = []
+        if s:
+            for x in range(1,s.number+1):
+                out.append((x, s.user_id))
+        return jsonify({"list": out})
 
 @app.route('/download_csv/<n>')
 def create_csv(n):
@@ -295,7 +305,7 @@ def create_csv(n):
     writer = csv.writer(data)
     
     # Write headers if needed
-    writer.writerow(['Name', 'Surname', 'User ID', 'Session', 'Exercise', 'Result'])
+    writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'Risultato'])
 
     for s in sessions:
         
@@ -310,7 +320,8 @@ def create_csv(n):
             user_name = user.name
             user_surname = user.surname
             result = s.result.decode() if s.result else "No result"
-            writer.writerow([user_name, user_surname, user_id, session_number, exercise_name, result])
+            peso = s.info if s.result else "No info"
+            writer.writerow([user_name, user_surname, user_id, session_number, exercise_name, peso, result])
 
     data.seek(0)
 

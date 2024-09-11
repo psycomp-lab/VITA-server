@@ -45,14 +45,6 @@ document.addEventListener("DOMContentLoaded", function() {
         })
     }
     
-    document.getElementById("break_extend").addEventListener("click",function(){
-        socket.emit(this.id);
-    });
-
-    document.getElementById("break_interrupt").addEventListener("click",function(){
-        socket.emit(this.id);
-    });
-    
 
 
 });

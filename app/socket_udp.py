@@ -8,21 +8,13 @@ from socket import inet_aton, inet_ntoa
 
 socketio = SocketIO(app, async_mode='threading')
 
-@socketio.on('continue')
+@socketio.on('restart')
 def handle_continue():
-    print('Avvisa visore continua')
+    send_data("RESTART")
 
 @socketio.on('pause')
 def handle_pause():
-    print('Avvisa visore pausa')
-
-@socketio.on("break_interrupt")
-def break_interrupt():
-    print("Avvisa visore di interrompere la pausa")
-
-@socketio.on("break_extend")
-def break_extend():
-    print("Avvisa il visore di allungare la pausa")
+    send_data("PAUSE")
 
 
 MESSAGE_PORT = 50069
@@ -53,7 +45,7 @@ def send_data(msg):
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
             resp, addr = recv_socket.recvfrom(1024 ** 2)
             if addr == CONNECTED_CLIENT and resp == DATA_ACK:
-                print("[DATA] sent data to client")
+                print(f"[DATA] sent data to client {msg}")
                 save_data(msg)
                 connection_event.set()
                 break
@@ -141,7 +133,6 @@ def main():
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("end_session")
-            print("SENT END SESSION")
             break
 
         msg = "WAITING "+ saved_data["list_exercises"][index] +" "+ saved_data["id"]+" "+saved_data["session"]

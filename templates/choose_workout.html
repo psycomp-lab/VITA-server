@@ -7,7 +7,10 @@
 
 {% block body %}
 <div class="container position-relative">
-    <button id="dev" class="btn btn-danger position-absolute top-0 end-0">DEV</button>
+    {% include 'sessions_info_component.html' %}
+    {% if n_session < 9%}
+        <button id="dev" class="btn btn-danger position-absolute top-0 end-0">DEV</button>
+    {% endif %}
     <h1 class="mt-1 fs-1">SESSIONE ALLENAMENTO</h1>
     <div class="text-center">
         <dt>N. sessione :</dt>
@@ -116,4 +119,5 @@
         }
     });
 </script>
+<script src="/static/sessions_button.js"></script>
 {% endblock %}

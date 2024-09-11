@@ -2,6 +2,7 @@
 
 {% block body %}
 <div class="container position-relative">
+    {% include 'sessions_info_component.html' %}
     <div class="mt-1">
         <h1>SESSIONE IN CORSO</h1>
     </div> 
@@ -26,7 +27,11 @@
                     {% for ex in data %}
                     <tr>
                         <td>{{ex.name}}</td>
-                        <td><i id="{{ex.id}}" class="mx-4 fa-xl fa-solid fa-spinner fa-spin"></i></td>
+                        {% if ex.id|string in requested_ex %}
+                            <td><i id="{{ex.id}}" class="mx-4 fa-xl fa-solid fa-spinner fa-spin"></i></td>
+                        {% else %}
+                            <td><i id="{{ex.id}}" class="mx-4 fa-xl fa-solid fa-check"></i></td>
+                        {% endif %}
                         <td><input name="ex_{{ex.id}}" id="ex_{{ex.id}}" type="text" size="10" maxlength="10"> kg/Res</td>
                     </tr>
                     {% endfor %}
@@ -35,18 +40,13 @@
             </div>
             <div id="controller" class="mt-4 d-block">
                 <h3 id="testo_pausa" class="d-none">In pausa</h3>
-                <div class="button-container mt-4">
-                    <button class="btn btn-lg btn-light mx-2" type="button" disabled id="play"><i class="fa-solid fa-play"></i></button>
-                    <button class="btn btn-lg btn-danger mx-2" type="button" id="pause"><i class="fa-solid fa-pause"></i></button>
+                <div class="mt-4 justify-content-center">
+                    <button class="btn btn-lg btn-light mx-2 w-100" type="button" disabled id="play">Continua</button>
                 </div>
                 <div class="mt-4 justify-content-center">
-                    <h3>Allunga la pausa</h3>
-                    <button class="break btn w-50 btn-light mx-2" type="button" id="break_extend"><i class="fa-solid fa-forward"></i></button>
+                    <button class="btn btn-lg btn-danger mx-2 w-100" type="button" id="pause"> Pausa </button>
                 </div>
-                <div class="mt-4 justify-content-center">
-                    <h3>Interrompi la pausa</h3>
-                    <button class="break btn w-50 btn-light mx-2" type="button" id="break_interrupt"><i class="fa-solid fa-stop"></i></button>
-                </div>
+                
             </div> 
         </div>
         <div class="row mt-4 justify-content-end">
@@ -58,5 +58,6 @@
     </form>
     
 </div>
+<script src="/static/sessions_button.js"></script>
 
 {% endblock %}
