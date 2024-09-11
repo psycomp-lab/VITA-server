@@ -10,11 +10,13 @@ socketio = SocketIO(app, async_mode='threading')
 
 @socketio.on('restart')
 def handle_continue():
-    send_data("RESTART")
-
+    global RESTART
+    RESTART = True
+                                  
 @socketio.on('pause')
 def handle_pause():
-    send_data("PAUSE")
+    global PAUSE
+    PAUSE = True
 
 
 MESSAGE_PORT = 50069
@@ -25,7 +27,8 @@ BEACON_ACK = b"BEACON_ACK"
 CONNECT_MESSAGE = b"CONNECT"
 CONNECT_ACK = b"CONNECT_ACK"
 DATA_ACK = b"DATA_ACK"
-
+PAUSE = False
+RESTART = False
 saved_data = {}
 client_ips = []
 
@@ -89,7 +92,7 @@ def send_beacon_packets():
     while True:
         if not CONNECTED:
             try:
-                sock.sendto(BEACON_MESSAGE, ("127.0.0.1", BROADCAST_PORT))
+                sock.sendto(BEACON_MESSAGE, (broadip, BROADCAST_PORT))
                 print("[BEACON] sent beacon for discovery")
             except Exception as e:
                 print(f"Failed to send beacon packet: {e}")
@@ -106,7 +109,7 @@ def send_beacon_packets():
 
 # Main function to manage connections and data
 def main():
-    global CONNECTED, CONNECTED_CLIENT, last_connection_checked
+    global CONNECTED, CONNECTED_CLIENT, last_connection_checked,PAUSE,RESTART
 
     # Set the TTL value to 20 for broadcasting
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20)
@@ -129,12 +132,28 @@ def main():
     time.sleep(5)
     # Check messages, connections and send SOCKETIO notifications
     while CONNECTED:
+        if PAUSE:
+            while True:
+                recv_socket.sendto(b"PAUSE",CONNECTED_CLIENT)
+                print("SENT PAUSE")
+                resp,_ = recv_socket.recvfrom(1024**2)
+                if resp == DATA_ACK:
+                    PAUSE = False
+                    break
+        if RESTART:
+            while True:
+                recv_socket.sendto(b"RESTART",CONNECTED_CLIENT)
+                print("SENT RESTART")
+                resp,_= recv_socket.recvfrom(1024**2)
+                if resp == DATA_ACK:
+                    RESTART = False
+                    break
+
         if index >= len(saved_data["list_exercises"]):
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("end_session")
             break
-
         msg = "WAITING "+ saved_data["list_exercises"][index] +" "+ saved_data["id"]+" "+saved_data["session"]
         try:
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
@@ -163,7 +182,7 @@ def main():
                         else:
                             print(f"No session found for user {id} with number {number}")
                 else:
-                    print(msg.decode())
+                    print(msg.decode() + "QUI")
         except socket.timeout:
             pass
         except Exception as e:
