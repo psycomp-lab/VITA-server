@@ -133,21 +133,33 @@ def main():
     # Check messages, connections and send SOCKETIO notifications
     while CONNECTED:
         if PAUSE:
-            while True:
-                recv_socket.sendto(b"PAUSE",CONNECTED_CLIENT)
-                print("SENT PAUSE")
-                resp,_ = recv_socket.recvfrom(1024**2)
-                if resp == DATA_ACK:
-                    PAUSE = False
-                    break
+            # Send PAUSE message continuously until DATA_ACK is received
+            while PAUSE:
+                try:
+                    recv_socket.sendto(b"PAUSE", CONNECTED_CLIENT)
+                    print("SENT PAUSE")
+                    resp, _ = recv_socket.recvfrom(1024**2)
+                    if resp == DATA_ACK:
+                        print("PAUSE ACK received")
+                        PAUSE = False  # Exit the PAUSE loop
+                except socket.timeout:
+                    continue  # Continue sending PAUSE if no ACK received
+                except Exception as e:
+                    print(f"Error while sending PAUSE: {e}")
         if RESTART:
-            while True:
-                recv_socket.sendto(b"RESTART",CONNECTED_CLIENT)
-                print("SENT RESTART")
-                resp,_= recv_socket.recvfrom(1024**2)
-                if resp == DATA_ACK:
-                    RESTART = False
-                    break
+            # Send RESTART message continuously until DATA_ACK is received
+            while RESTART:
+                try:
+                    recv_socket.sendto(b"RESTART", CONNECTED_CLIENT)
+                    print("SENT RESTART")
+                    resp, _ = recv_socket.recvfrom(1024**2)
+                    if resp == DATA_ACK:
+                        print("RESTART ACK received")
+                        RESTART = False  # Exit the RESTART loop
+                except socket.timeout:
+                    continue  # Continue sending RESTART if no ACK received
+                except Exception as e:
+                    print(f"Error while sending RESTART: {e}")
 
         if index >= len(saved_data["list_exercises"]):
             CONNECTED = False
