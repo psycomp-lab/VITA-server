@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function() {
             play.disabled = true;
             pause.disabled = false;
             document.getElementById("testo_pausa").classList.add("d-none");
-            socket.emit("continue");
+            socket.emit("restart");
         })
     }
     

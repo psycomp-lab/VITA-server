@@ -124,21 +124,21 @@ def main():
     time.sleep(5)
 
     while CONNECTED:
-        
         if index >= len(saved_data.get("list_exercises", [])):
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("end_session")
             break
 
-        if PAUSE and not RESTART:
+        if PAUSE:
             msg = "PAUSE"
-        elif not PAUSE and RESTART:
+        elif RESTART:
             msg = "RESTART"
         else:
             msg = "WAITING "+ saved_data.get("list_exercises", [])[index] +" "+ saved_data.get("id", "")+" "+saved_data.get("session", "")
         try:
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
+            print(f"[SENT] sent {msg}")
             msg, addr = recv_socket.recvfrom(1024 ** 2)
 
             if addr == CONNECTED_CLIENT:
