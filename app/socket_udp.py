@@ -11,62 +11,18 @@ socketio = SocketIO(app, async_mode='threading')
 # Global flags and synchronization primitives
 PAUSE = False
 RESTART = False
-pause_lock = threading.Lock()
-restart_lock = threading.Lock()
+PAUSE_ACK = b"PAUSE_ACK"
+RESTART_ACK = b"RESTART_ACK"
 
 @socketio.on('restart')
 def handle_restart():
     global RESTART
-    with restart_lock:
-        RESTART = True
-        print("RESTART received")
+    RESTART = True
 
 @socketio.on('pause')
 def handle_pause():
     global PAUSE
-    with pause_lock:
-        PAUSE = True
-        print("PAUSE received")
-
-def send_restart_message():
-    global RESTART
-    while True:
-        with restart_lock:
-            if not RESTART:
-                break
-        try:
-            recv_socket.sendto(b"RESTART", CONNECTED_CLIENT)
-            print("SENT RESTART")
-            resp, _ = recv_socket.recvfrom(1024**2)
-            if resp == DATA_ACK:
-                print("RESTART ACK received")
-                with restart_lock:
-                    RESTART = False
-        except socket.timeout:
-            continue
-        except Exception as e:
-            print(f"Error while sending RESTART: {e}")
-            break
-
-def send_pause_message():
-    global PAUSE
-    while True:
-        with pause_lock:
-            if not PAUSE:
-                break
-        try:
-            recv_socket.sendto(b"PAUSE", CONNECTED_CLIENT)
-            print("SENT PAUSE")
-            resp, _ = recv_socket.recvfrom(1024**2)
-            if resp == DATA_ACK:
-                print("PAUSE ACK received")
-                with pause_lock:
-                    PAUSE = False
-        except socket.timeout:
-            continue
-        except Exception as e:
-            print(f"Error while sending PAUSE: {e}")
-            break
+    PAUSE = True
 
 MESSAGE_PORT = 50069
 BROADCAST_PORT = 50068
@@ -136,7 +92,7 @@ def send_beacon_packets():
     while True:
         if not CONNECTED:
             try:
-                sock.sendto(BEACON_MESSAGE, (broadip, BROADCAST_PORT))
+                sock.sendto(BEACON_MESSAGE, ("127.0.0.1", BROADCAST_PORT))
                 print("[BEACON] sent beacon for discovery")
             except Exception as e:
                 print(f"Failed to send beacon packet: {e}")
@@ -151,7 +107,7 @@ def send_beacon_packets():
                 pass
 
 def main():
-    global CONNECTED, CONNECTED_CLIENT, last_connection_checked
+    global CONNECTED, CONNECTED_CLIENT, last_connection_checked, RESTART, PAUSE
 
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20)
 
@@ -168,22 +124,19 @@ def main():
     time.sleep(5)
 
     while CONNECTED:
-        with pause_lock:
-            if PAUSE:
-                pause_thread = threading.Thread(target=send_pause_message)
-                pause_thread.start()
-        with restart_lock:
-            if RESTART:
-                restart_thread = threading.Thread(target=send_restart_message)
-                restart_thread.start()
-
+        
         if index >= len(saved_data.get("list_exercises", [])):
             CONNECTED = False
             CONNECTED_CLIENT = None
             socketio.emit("end_session")
             break
 
-        msg = "WAITING "+ saved_data.get("list_exercises", [])[index] +" "+ saved_data.get("id", "")+" "+saved_data.get("session", "")
+        if PAUSE and not RESTART:
+            msg = "PAUSE"
+        elif not PAUSE and RESTART:
+            msg = "RESTART"
+        else:
+            msg = "WAITING "+ saved_data.get("list_exercises", [])[index] +" "+ saved_data.get("id", "")+" "+saved_data.get("session", "")
         try:
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
             msg, addr = recv_socket.recvfrom(1024 ** 2)
@@ -209,8 +162,15 @@ def main():
                             print(f"Updated session {number} for user {id} with result: {result}")
                         else:
                             print(f"No session found for user {id} with number {number}")
+                elif msg == RESTART_ACK:
+                    RESTART = False
+                    print("[RESTART_ACK] received")
+                elif msg == PAUSE_ACK:
+                    PAUSE = False
+                    print("[PAUSE_ACK] received")
                 else:
                     print(msg.decode() + "QUI")
+
         except socket.timeout:
             pass
         except Exception as e:

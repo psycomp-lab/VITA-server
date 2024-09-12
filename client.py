@@ -50,6 +50,10 @@ def receive_beacon_and_send_ack():
             s = "FINISHED_EXERCISE "+parts[1]+" 1933858 bello"
             print(s)
             client_socket.sendto(s.encode("utf-8"),addr)
+        elif msg == b"RESTART":
+            client_socket.sendto(b"RESTART_ACK",addr)
+        elif msg == b"PAUSE":
+            client_socket.sendto(b"PAUSE_ACK",addr)
 
 if __name__ == "__main__":
     receive_beacon_and_send_ack()
