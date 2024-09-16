@@ -92,7 +92,7 @@ def send_beacon_packets():
     while True:
         if not CONNECTED:
             try:
-                sock.sendto(BEACON_MESSAGE, ("127.0.0.1", BROADCAST_PORT))
+                sock.sendto(BEACON_MESSAGE, (broadip, BROADCAST_PORT))
                 print("[BEACON] sent beacon for discovery")
             except Exception as e:
                 print(f"Failed to send beacon packet: {e}")
