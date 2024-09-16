@@ -37,7 +37,7 @@ saved_data = {}
 client_ips = []
 
 TIMEOUT_SECONDS = 5
-CHECK_INTERVAL_SECONDS = 3600
+CHECK_INTERVAL_SECONDS = 120
 CONNECTED = False
 CONNECTED_CLIENT = None
 last_connection_checked = None
@@ -92,8 +92,8 @@ def send_beacon_packets():
     while True:
         if not CONNECTED:
             try:
-                sock.sendto(BEACON_MESSAGE, ("127.0.0.1", BROADCAST_PORT))
-                print("[BEACON] sent beacon for discovery")
+                sock.sendto(BEACON_MESSAGE, (broadip, BROADCAST_PORT))
+                print(f"[BEACON] sent beacon for discovery: {broadip}")
             except Exception as e:
                 print(f"Failed to send beacon packet: {e}")
 
@@ -129,13 +129,14 @@ def main():
             CONNECTED_CLIENT = None
             socketio.emit("end_session")
             break
-
+        
+        req = saved_data.get("list_exercises", [])[index]
         if PAUSE:
             msg = "PAUSE"
         elif RESTART:
             msg = "RESTART"
         else:
-            msg = "WAITING "+ saved_data.get("list_exercises", [])[index] +" "+ saved_data.get("id", "")+" "+saved_data.get("session", "")
+            msg = "WAITING "+ req #+" "+ saved_data.get("id", "")+" "+saved_data.get("session", "")
         try:
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
             print(f"[SENT] sent {msg}")
@@ -146,7 +147,7 @@ def main():
 
                 if msg.decode().startswith("FINISHED_EXERCISE "):
                     index += 1
-                    print("***** received finished_exercise")
+                    print(f"***** received: {msg}")
                     msg = msg.decode()
                     tokens = msg.split(" ")
                     number = int(tokens[1])
@@ -162,19 +163,34 @@ def main():
                             print(f"Updated session {number} for user {id} with result: {result}")
                         else:
                             print(f"No session found for user {id} with number {number}")
+
                 elif msg == RESTART_ACK:
                     RESTART = False
                     print("[RESTART_ACK] received")
                 elif msg == PAUSE_ACK:
                     PAUSE = False
                     print("[PAUSE_ACK] received")
+                elif msg.decode().startswith("DOING"):
+                    parts = msg.decode().split(" ")
+                    ex = parts[1]
+                    if ex != req:
+                        session = Session.query.filter_by(user_id=saved_data.get("id"), exercise=req).order_by(Session.number.desc()).first()
+                        if session:
+                            session.result = b"NON REGISTRATO"
+                            db.session.commit()
+                            socketio.emit("exercise", req)
+                            index += 1
+                            print(f"Result for exercise {req} not registered")
+
                 else:
-                    print(msg.decode() + "QUI")
+                    print("Received: "+msg.decode())
 
         except socket.timeout:
             pass
         except Exception as e:
             print(f"Error while checking connection: {e}")
+
+        time.sleep(10)
 
         if time.time() - last_connection_checked > CHECK_INTERVAL_SECONDS:
             CONNECTED = False
