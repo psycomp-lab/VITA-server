@@ -27,7 +27,12 @@
                     {% for ex in data %}
                     <tr>
                         <td>{{ex.name}}</td>
-                        {% if ex.id|string in requested_ex %}
+                        {% if info.get(ex.id) %}
+                            <td>{{info[ex.id]}}</td>
+                        {% else %}
+                            <td>&nbsp;</td>
+                        {% endif %}
+                        {% if ex.id in requested_ex %}
                             <td><i id="{{ex.id}}" class="mx-4 fa-xl fa-solid fa-spinner fa-spin"></i></td>
                         {% else %}
                             <td><i id="{{ex.id}}" class="mx-4 fa-xl fa-solid fa-check"></i></td>

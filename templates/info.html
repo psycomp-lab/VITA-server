@@ -33,7 +33,7 @@
                     Maschio
                 {% endif %}
             </dd>
-            <button class="btn btn-lg btn-info mt-4">Storico</button>
+            <button id="storicoCSV" class="btn btn-lg btn-info mt-4">Storico</button>
         </div>
         <br>
         <div class="d-inline-block fs-5">
@@ -122,5 +122,9 @@
 </div>
 
 <script src="/static/sessions_button.js"></script>
-
+<script>
+    document.getElementById('storicoCSV').addEventListener('click', function() {
+        window.location.href = "{{ url_for('download_csv') }}";
+    });
+</script>
 {% endblock %}

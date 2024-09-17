@@ -31,6 +31,7 @@ BEACON_MESSAGE = b"BEACON"
 BEACON_ACK = b"BEACON_ACK"
 CONNECT_MESSAGE = b"CONNECT"
 CONNECT_ACK = b"CONNECT_ACK"
+DATA = None
 DATA_ACK = b"DATA_ACK"
 
 saved_data = {}
@@ -46,18 +47,39 @@ connection_event = threading.Event()
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 recv_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-def send_data(msg):
+def get_clients():
+    return client_ips
+
+def disconnect():
+    global CONNECTED_CLIENT,CONNECTED,DATA,last_connection_checked,client_ips,saved_data
+    CONNECTED = False
+    CONNECTED_CLIENT = None
+    DATA = None
+    last_connection_checked = None
+    client_ips = []
+    saved_data = {}
+
+def send_data():
+    global CONNECTED,CONNECTED_CLIENT,DATA
+    DATA = "SESSION "+saved_data["id"]+" "+str(saved_data["session"])+" "
+    for ex in saved_data["list_exercises"]:
+        DATA += str(ex) + " "
     while True:
         try:
-            recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
+            recv_socket.sendto(DATA.encode("utf-8"), CONNECTED_CLIENT)
             resp, addr = recv_socket.recvfrom(1024 ** 2)
             if addr == CONNECTED_CLIENT and resp == DATA_ACK:
-                print(f"[DATA] sent data to client {msg}")
-                save_data(msg)
+                print(f"[DATA_ACK] sent data to client {DATA}")
                 connection_event.set()
                 break
+        except OSError as e:
+            if e.errno == 10054:
+                print("****Error the headset was forcefully disconnected")
+                disconnect()
+                socketio.emit("disconnect-vr")
+                sock
         except Exception as e:
-            print(f"Failed to send data to client: {e}")
+            print(f"****Failed to send data to client: {e}")
 
 def is_connected():
     return CONNECTED
@@ -68,7 +90,7 @@ def get_local_ip():
         s.connect(('10.255.255.255', 1))
         IP = s.getsockname()[0]
     except Exception as e:
-        print(f"Failed to get local ip: {e}")
+        print(f"****Failed to get local ip: {e}")
         IP = '127.0.0.1'
     finally:
         s.close()
@@ -80,27 +102,27 @@ def send_connect(client):
         recv_socket.sendto(CONNECT_MESSAGE, client)
         msg, addr = recv_socket.recvfrom(1024 ** 2)
         if msg == CONNECT_ACK and addr == client:
-            print("[CONNECT] connected to client")
+            print("[CONNECT_ACK] connected to client")
             CONNECTED = True
             CONNECTED_CLIENT = client
             last_connection_checked = time.time()
     except Exception as e:
-        print(f"Failed connection to client: {e}")
+        print(f"****Failed connection to client: {e}")
 
 def send_beacon_packets():
+    global client_ips
     broadip = inet_ntoa(inet_aton(get_local_ip())[:3] + b'\xff')
     while True:
         if not CONNECTED:
             try:
-                sock.sendto(BEACON_MESSAGE, (broadip, BROADCAST_PORT))
+                sock.sendto(BEACON_MESSAGE, ("127.0.0.1", BROADCAST_PORT))
                 print(f"[BEACON] sent beacon for discovery: {broadip}")
             except Exception as e:
-                print(f"Failed to send beacon packet: {e}")
-
+                print(f"****Failed to send beacon packet: {e}")
             try:
                 data, addr = recv_socket.recvfrom(1024 ** 2)
                 if data == BEACON_ACK:
-                    print("[ACK] received a discovery ack from client")
+                    print("[BEACON_ACK] received a discovery ack from client")
                     if addr not in client_ips:
                         client_ips.append(addr)
             except socket.timeout:
@@ -125,21 +147,20 @@ def main():
 
     while CONNECTED:
         if index >= len(saved_data.get("list_exercises", [])):
-            CONNECTED = False
-            CONNECTED_CLIENT = None
+            disconnect()
             socketio.emit("end_session")
             break
         
-        req = saved_data.get("list_exercises", [])[index]
+        req = str(saved_data.get("list_exercises", [])[index])
         if PAUSE:
             msg = "PAUSE"
         elif RESTART:
             msg = "RESTART"
         else:
-            msg = "WAITING "+ req #+" "+ saved_data.get("id", "")+" "+saved_data.get("session", "")
+            msg = "WAITING "+ req
         try:
             recv_socket.sendto(msg.encode("utf-8"), CONNECTED_CLIENT)
-            print(f"[SENT] sent {msg}")
+            print(f"****Sent {msg}")
             msg, addr = recv_socket.recvfrom(1024 ** 2)
 
             if addr == CONNECTED_CLIENT:
@@ -147,7 +168,6 @@ def main():
 
                 if msg.decode().startswith("FINISHED_EXERCISE "):
                     index += 1
-                    print(f"***** received: {msg}")
                     msg = msg.decode()
                     tokens = msg.split(" ")
                     number = int(tokens[1])
@@ -160,9 +180,9 @@ def main():
                             session.result = result
                             db.session.commit()
                             socketio.emit("exercise", number)
-                            print(f"Updated session {number} for user {id} with result: {result}")
+                            print(f"****Updated session {number} for user {id} with result: {result}")
                         else:
-                            print(f"No session found for user {id} with number {number}")
+                            print(f"****No session found for user {id} with number {number}")
 
                 elif msg == RESTART_ACK:
                     RESTART = False
@@ -171,6 +191,7 @@ def main():
                     PAUSE = False
                     print("[PAUSE_ACK] received")
                 elif msg.decode().startswith("DOING"):
+                    print(f"****Received {msg.decode()}")
                     parts = msg.decode().split(" ")
                     ex = parts[1]
                     if ex != req:
@@ -180,26 +201,30 @@ def main():
                             db.session.commit()
                             socketio.emit("exercise", req)
                             index += 1
-                            print(f"Result for exercise {req} not registered")
+                            print(f"****Result for exercise {req} not registered")
 
                 else:
-                    print("Received: "+msg.decode())
-
+                    print(f"****Received {msg.decode()}")
+        
         except socket.timeout:
             pass
+        except OSError as e:
+            if e.errno == 10054:
+                print("[ERROR] the headset was forcefully disconnected")
+                disconnect()
+                socketio.emit("disconnect-vr")
         except Exception as e:
-            print(f"Error while checking connection: {e}")
+            print(f"****Error while checking connection: {e}")
 
         time.sleep(10)
 
         if time.time() - last_connection_checked > CHECK_INTERVAL_SECONDS:
-            CONNECTED = False
-            CONNECTED_CLIENT = None
+            disconnect()
             socketio.emit("disconnect-vr")
 
-def save_data(msg: str):
+def save_data(id:str,session:str,list_exercises:list):
     global saved_data
-    parts = msg.rstrip().split(" ")
-    saved_data["id"] = parts[1]
-    saved_data["session"] = parts[2]
-    saved_data["list_exercises"] = parts[3:]
+    saved_data["id"] = id
+    saved_data["session"] = session
+    saved_data["list_exercises"] = list_exercises
+   
