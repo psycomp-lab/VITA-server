@@ -67,6 +67,7 @@ def send_data():
     while True:
         try:
             recv_socket.sendto(DATA.encode("utf-8"), CONNECTED_CLIENT)
+            print("**** sent data message")
             resp, addr = recv_socket.recvfrom(1024 ** 2)
             if addr == CONNECTED_CLIENT and resp == DATA_ACK:
                 print(f"[DATA_ACK] sent data to client {DATA}")
@@ -77,7 +78,7 @@ def send_data():
                 print("****Error the headset was forcefully disconnected")
                 disconnect()
                 socketio.emit("disconnect-vr")
-                sock
+                break
         except Exception as e:
             print(f"****Failed to send data to client: {e}")
 
