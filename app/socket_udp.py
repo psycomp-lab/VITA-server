@@ -196,13 +196,14 @@ def main():
                     parts = msg.decode().split(" ")
                     ex = parts[1]
                     if ex != req:
-                        session = Session.query.filter_by(user_id=saved_data.get("id"), exercise=req).order_by(Session.number.desc()).first()
-                        if session:
-                            session.result = b"NON REGISTRATO"
-                            db.session.commit()
-                            socketio.emit("exercise", req)
-                            index += 1
-                            print(f"****Result for exercise {req} not registered")
+                        with app.app_context():
+                            session = Session.query.filter_by(user_id=saved_data.get("id"), exercise=req).order_by(Session.number.desc()).first()
+                            if session:
+                                session.result = b"NON REGISTRATO"
+                                db.session.commit()
+                                socketio.emit("exercise", req)
+                                index += 1
+                                print(f"****Result for exercise {req} not registered")
 
                 else:
                     print(f"****Received {msg.decode()}")
