@@ -183,7 +183,7 @@ def new_training(n):
     
             for i in range(1, 6):  # Assuming you have 5 exercises
                 exercise_id = request.form.get(f"ex{i}")
-                list_exercises.append(exercise_id)
+                list_exercises.append(int(exercise_id))
                 new_session = Session(code, n, exercise_id)
                 db.session.add(new_session)
 
