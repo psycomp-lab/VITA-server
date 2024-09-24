@@ -116,7 +116,7 @@ def send_beacon_packets():
     while True:
         if not CONNECTED:
             try:
-                sock.sendto(BEACON_MESSAGE, ("127.0.0.1", BROADCAST_PORT))
+                sock.sendto(BEACON_MESSAGE, (broadip, BROADCAST_PORT))
                 print(f"[BEACON] sent beacon for discovery: {broadip}")
             except Exception as e:
                 print(f"****Failed to send beacon packet: {e}")
@@ -151,7 +151,6 @@ def main():
             disconnect()
             socketio.emit("end_session")
             break
-        
         req = str(saved_data.get("list_exercises", [])[index])
         if PAUSE:
             msg = "PAUSE"
@@ -172,7 +171,7 @@ def main():
                     msg = msg.decode()
                     tokens = msg.split(" ")
                     number = int(tokens[1])
-                    id = int(tokens[2])
+                    id = tokens[2]
                     result = tokens[3].encode("utf-8")
 
                     with app.app_context():
@@ -197,14 +196,17 @@ def main():
                     ex = parts[1]
                     if ex != req:
                         with app.app_context():
+                            index += 1
                             session = Session.query.filter_by(user_id=saved_data.get("id"), exercise=req).order_by(Session.number.desc()).first()
                             if session:
                                 session.result = b"NON REGISTRATO"
                                 db.session.commit()
                                 socketio.emit("exercise", req)
-                                index += 1
                                 print(f"****Result for exercise {req} not registered")
-
+                elif msg == b"END_SESSION":
+                    disconnect()
+                    print(f"****This is the end session. Closing the socket")
+                    socketio.emit("end_session")
                 else:
                     print(f"****Received {msg.decode()}")
         
@@ -215,6 +217,7 @@ def main():
                 print("[ERROR] the headset was forcefully disconnected")
                 disconnect()
                 socketio.emit("disconnect-vr")
+                break
         except Exception as e:
             print(f"****Error while checking connection: {e}")
 

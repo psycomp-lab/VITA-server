@@ -8,7 +8,7 @@ db = SQLAlchemy()
 
 class Session(db.Model):
     __tablename__ = 'users_session'
-    user_id = Column('user_id',String,ForeignKey('users.id'),primary_key=True)
+    user_id = Column('user_id',String,ForeignKey('users.code'),primary_key=True)
     number = Column(Integer,primary_key=True,default=1)
     exercise = Column(Integer, ForeignKey('exercises.id'), primary_key=True)
     result = Column(LargeBinary,nullable=True)

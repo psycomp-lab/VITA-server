@@ -272,6 +272,8 @@ def confirm_session():
                 if exercise:
                     list_exercises.append(exercise)
         user = User.query.filter_by(code=saved_data["id"]).first()
+        print(list_exercises)
+        print(saved_data.get("list_exercises"))
         return render_template("confirm_session.html",user = user,session = sessions.number,data=list_exercises,requested_ex=saved_data["list_exercises"])
     else:
         flash("Devi connetterti al visore", "disconnected")
