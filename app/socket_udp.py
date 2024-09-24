@@ -33,6 +33,7 @@ CONNECT_MESSAGE = b"CONNECT"
 CONNECT_ACK = b"CONNECT_ACK"
 DATA = None
 DATA_ACK = b"DATA_ACK"
+IN_SESSION = False
 
 saved_data = {}
 client_ips = []
@@ -60,7 +61,7 @@ def disconnect():
     saved_data = {}
 
 def send_data():
-    global CONNECTED,CONNECTED_CLIENT,DATA
+    global CONNECTED,CONNECTED_CLIENT,DATA,IN_SESSION
     DATA = "SESSION "+saved_data["id"]+" "+str(saved_data["session"])+" "
     for ex in saved_data["list_exercises"]:
         DATA += str(ex) + " "
@@ -72,6 +73,7 @@ def send_data():
             if addr == CONNECTED_CLIENT and resp == DATA_ACK:
                 print(f"[DATA_ACK] sent data to client {DATA}")
                 connection_event.set()
+                IN_SESSION = True
                 break
         except OSError as e:
             if e.errno == 10054:
@@ -83,7 +85,17 @@ def send_data():
             print(f"****Failed to send data to client: {e}")
 
 def is_connected():
-    return CONNECTED
+    recv_socket.sendto(CONNECT_MESSAGE,CONNECTED_CLIENT)
+    for _ in range(3):
+        try:
+            msg,addr = recv_socket.recvfrom(1024 ** 2)
+            if addr == CONNECTED_CLIENT:
+                if msg == CONNECT_ACK:
+                    return True
+        except socket.timeout:
+            pass
+    return False
+
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -128,9 +140,13 @@ def send_beacon_packets():
                         client_ips.append(addr)
             except socket.timeout:
                 pass
+        else:
+            if not is_connected() and not IN_SESSION:
+                disconnect()
+                socketio.emit("end_session")
 
 def main():
-    global CONNECTED, CONNECTED_CLIENT, last_connection_checked, RESTART, PAUSE
+    global CONNECTED, CONNECTED_CLIENT, last_connection_checked, RESTART, PAUSE, IN_SESSION
 
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 20)
 
@@ -148,6 +164,7 @@ def main():
 
     while CONNECTED:
         if index >= len(saved_data.get("list_exercises", [])):
+            IN_SESSION = False
             disconnect()
             socketio.emit("end_session")
             break
@@ -174,15 +191,16 @@ def main():
                     id = tokens[2]
                     result = tokens[3].encode("utf-8")
 
-                    with app.app_context():
-                        session = Session.query.filter_by(user_id=id, exercise=number).order_by(Session.number.desc()).first()
-                        if session:
-                            session.result = result
-                            db.session.commit()
-                            socketio.emit("exercise", number)
-                            print(f"****Updated session {number} for user {id} with result: {result}")
-                        else:
-                            print(f"****No session found for user {id} with number {number}")
+                    if number == int(req):
+                        with app.app_context():
+                            session = Session.query.filter_by(user_id=id, exercise=number).order_by(Session.number.desc()).first()
+                            if session:
+                                session.result = result
+                                db.session.commit()
+                                socketio.emit("exercise", number)
+                                print(f"****Updated session {number} for user {id} with result: {result}")
+                            else:
+                                print(f"****No session found for user {id} with number {number}")
 
                 elif msg == RESTART_ACK:
                     RESTART = False
@@ -224,6 +242,7 @@ def main():
         time.sleep(10)
 
         if time.time() - last_connection_checked > CHECK_INTERVAL_SECONDS:
+            IN_SESSION = False
             disconnect()
             socketio.emit("disconnect-vr")
 

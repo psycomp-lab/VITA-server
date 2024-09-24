@@ -2,7 +2,6 @@
 
 {% block body %}
 <div class="container position-relative">
-    {% include 'sessions_info_component.html' %}
     <div class="mt-1">
         <h1>SESSIONE</h1>
     </div> 
@@ -18,6 +17,9 @@
         </div>
     </div>
     <hr>
+    <div class="justify-content-center">
+        <p>Selezionare esercizi che sono stati già fatti??</p>
+    </div>
     <div class="d-lg-flex d-md-inline-block mt-4 justify-content-evenly">
         <input type="hidden" id="user_id" name="user_id" value="{{user.code}}">
         <input type="hidden" id="user_session" name="user_session" value="{{session}}">
