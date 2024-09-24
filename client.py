@@ -28,32 +28,23 @@ def receive_beacon_and_send_ack():
             if msg == b"CONNECT":
                 client_socket.sendto(CONNECT_ACK, addr)
                 print("[CONNECTED] Connected to server")
-                break
-        except socket.timeout:
-            pass
-
-    while True:
-        try:
-            msg, addr = client_socket.recvfrom(1024)
-            if msg.startswith(b"SESSION"):
+            elif msg.startswith(b"SESSION"):
                 print(f"[DATA] Received data: {msg.decode()}")
                 client_socket.sendto(DATA_ACK, addr)
-                break
+            elif msg.decode().startswith("WAITING"):
+                parts = msg.decode().split(" ")
+                s = "FINISHED_EXERCISE "+parts[1]+" 1933858 bello"
+                print(s)
+                client_socket.sendto(s.encode("utf-8"),addr)
+            elif msg == b"RESTART":
+                client_socket.sendto(b"RESTART_ACK",addr)
+            elif msg == b"PAUSE":
+                client_socket.sendto(b"PAUSE_ACK",addr)
+            elif msg == b"CONNECT":
+                client_socket.sendto(CONNECT_ACK, addr)
+                print("Headset is stil connected")
         except socket.timeout:
             pass
-
-    while True:
-        msg, addr = client_socket.recvfrom(1024)
-        print(msg)
-        if msg.decode().startswith("WAITING"):
-            parts = msg.decode().split(" ")
-            s = "FINISHED_EXERCISE "+parts[1]+" 1933858 bello"
-            print(s)
-            client_socket.sendto(s.encode("utf-8"),addr)
-        elif msg == b"RESTART":
-            client_socket.sendto(b"RESTART_ACK",addr)
-        elif msg == b"PAUSE":
-            client_socket.sendto(b"PAUSE_ACK",addr)
 
 if __name__ == "__main__":
     receive_beacon_and_send_ack()

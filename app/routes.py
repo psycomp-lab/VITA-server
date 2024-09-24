@@ -6,7 +6,7 @@ from app.models import db,User,Session,Training,Exercise,TrainingExercise,UserEx
 from sqlalchemy import func
 from app.form import Registration,New_Workout
 from app.utils import serialize_list,get_exercises
-from app.socket_udp import get_clients,send_connect,is_connected,save_data,saved_data,send_data
+from app.socket_udp import get_clients,send_connect,is_connected,save_data,send_data,get_data
 import csv
 import io
 
@@ -232,33 +232,36 @@ def continue_session():
 
 @app.route("/user/session")
 def session_start():
-    global saved_data
+    saved_data = get_data()
     code = session["code"]
     if code and is_connected():
-        send_data()
-        list_exercises = []
-        sessions = Session.query.filter_by(user_id=code).order_by(Session.number.desc()).first()
-        if sessions is not None:
-            info = {} 
-            # Recupera tutte le sessioni con lo stesso numero
-            exercises_in_session = Session.query.filter_by(number=sessions.number, user_id=code).all()
-            # Aggiungi ogni esercizio alla lista
-            for ex in exercises_in_session:
-                i = UserExerciseInfo.query.filter_by(user_id=code, exercise_id=ex.exercise).first()
-                if i:
-                    info[ex.exercise] = i.info
-                exercise = Exercise.query.filter_by(id=ex.exercise).first()
-                if exercise:
-                    list_exercises.append(exercise)
-        user = User.query.filter_by(code=saved_data["id"]).first()
-        return render_template("session.html",user = user,data=list_exercises,info=info,requested_ex=saved_data["list_exercises"])
+        e = send_data()
+        if e:
+            list_exercises = []
+            sessions = Session.query.filter_by(user_id=code).order_by(Session.number.desc()).first()
+            if sessions is not None:
+                info = {} 
+                # Recupera tutte le sessioni con lo stesso numero
+                exercises_in_session = Session.query.filter_by(number=sessions.number, user_id=code).all()
+                # Aggiungi ogni esercizio alla lista
+                for ex in exercises_in_session:
+                    i = UserExerciseInfo.query.filter_by(user_id=code, exercise_id=ex.exercise).first()
+                    if i:
+                        info[ex.exercise] = i.info
+                    exercise = Exercise.query.filter_by(id=ex.exercise).first()
+                    if exercise:
+                        list_exercises.append(exercise)
+            user = User.query.filter_by(code=saved_data.get("id",[])).first()
+            return render_template("session.html",user = user,data=list_exercises,info=info,requested_ex=saved_data.get("list_exercises",[]))
+        else:
+            return render_template("session_error.html")
     else:
         flash("Devi connetterti al visore", "disconnected")
         return redirect(request.url)
     
 @app.route("/user/confirm_session")
 def confirm_session():
-    global saved_data
+    saved_data = get_data()
     code = session["code"]
     if code and is_connected():
         list_exercises = []
@@ -289,7 +292,7 @@ def handle_update():
             return jsonify({"status": "error", "message": "Session not found"}), 404
         
         session.result = b"NON REGISTRATO"
-        saved_data["list_exercises"].remove(int(ex_id))
+        get_data().get("list_exercises").remove(int(ex_id))
         db.session.commit()
         return jsonify({"status": "success", "message": "Exercise updated successfully."}), 200
     
@@ -392,9 +395,6 @@ def create_csv(n):
         
         exercise = Exercise.query.filter_by(id=s.exercise).first()
         user = User.query.filter_by(code=user_id).first()
-
-        print(exercise.name)
-        print(user.name)
 
         if exercise and user:
             exercise_name = exercise.name
