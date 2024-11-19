@@ -8,7 +8,9 @@
 {% block body %}
 <div class="container position-relative">
     {% include 'sessions_info_component.html' %}
-    
+    {% if n_session < 9%}
+        <button id="dev" class="btn btn-danger position-absolute top-0 start-0">PROVA</button>
+    {% endif %}
     <h1 class="mt-1 fs-1">SESSIONE ALLENAMENTO</h1>
     <div class="text-center">
         <dt>N. sessione :</dt>
@@ -18,13 +20,13 @@
         {% endif %}
     </div>
     
-    <form action="{{ url_for('choose_workout') }}" method="post" class="form">
+    <form action="{{ url_for('choose_workout') }}" id="form" method="post" class="form">
         <div class="d-md-inline-flex d-sm-block mt-2 form-input justify-content-between">
             {% for key, value in workouts.items() %}
-                <label for="{{ loop.index }}">
+                <label for="{{ loop.index }}" class="parent">
                     {% set is_disabled = n_session % 3 != loop.index % 3 and n_session < 8 %}
-                    <input type="radio" name="workout" id="{{ loop.index }}" value="{{ loop.index }}" class="card-input-element" {% if is_disabled %} disabled {% else %} checked {% endif %}>
-                    <div class="card-input card {% if is_disabled %} disabled {% endif %}" style="width: 321px;">
+                    <input type="radio" name="workout" id="{{ loop.index }}" value="{{ loop.index }}" class="choice card-input-element" {% if is_disabled %} disabled {% else %} checked {% endif %}>
+                    <div class="show card-input card {% if is_disabled %} disabled {% endif %}" style="width: 321px;">
                         <div class="card-header">
                             <h5>{{ key }}</h5>
                         </div>
@@ -45,8 +47,10 @@
                 <a href="{{url_for('search_user')}}" class="btn btn-light btn-lg" role="button">Cerca utente</a>
             </div>
             <div class="col-sm-3">
-                {% if n_session > 8 %}
-                    <a href="{{url_for('new_training')}}" class="m-1 btn btn-light btn-outline-danger">Crea allenamento</a>
+                {% if n_session < 9 %}
+                <a href="{{url_for('new_training',n=n_session)}}" id="create-workout" class="d-none m-1 btn btn-light btn-outline-danger">Crea allenamento</a>
+                {% else %}
+                <a href="{{url_for('new_training',n=n_session)}}" id="create-workout" class="m-1 btn btn-light btn-outline-danger">Crea allenamento</a>
                 {% endif %}
             </div>
             <div class="col-sm-3">
@@ -69,6 +73,51 @@
             return false;
         }
     });
+
+    let devMode = false;
+    const initialStates = [];
+    const createWorkoutLink = $('#create-workout');
+    const initialCreateWorkoutState = createWorkoutLink.hasClass('d-none');
+
+    $(".choice").each(function() {
+        initialStates.push({
+            element: $(this),
+            disabled: $(this).prop('disabled'),
+            checked: $(this).prop('checked')
+        });
+    });
+
+    $('#dev').on('click', function() {
+        devMode = !devMode;
+        if (devMode) {
+            alert("Attenzione!\nModalità da usare solo a fine dimostrativo. Per tornare allo stato iniziale premere nuovamente DEV.")
+            console.log("Modalità dev");
+            $(".choice").each(function(){
+                $(this).prop('disabled', false);
+                $(this).prop('checked', true);
+            });
+            $(".show").each(function(){
+                $(this).removeClass("disabled");
+            });
+            createWorkoutLink.removeClass('d-none');
+        } else {
+            console.log("Exit Modalità dev");
+            initialStates.forEach(state => {
+                state.element.prop('disabled', state.disabled);
+                state.element.prop('checked', state.checked);
+                if (state.disabled) {
+                    state.element.closest('.parent').children('.show').addClass('disabled');
+                } else {
+                    state.element.closest('.parent').children('.show').removeClass('disabled');
+                }
+            });
+            if (initialCreateWorkoutState) {
+                createWorkoutLink.addClass('d-none');
+            } else {
+                createWorkoutLink.removeClass('d-none');
+            }
+        }
+    });
 </script>
-<script src="{{ url_for('static', filename='sessions_info.js') }}"></script>
+<script src="/static/sessions_button.js"></script>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block body %}
+<div class="container position-relative">
+    {% include 'sessions_info_component.html' %}
+    <div class="mt-1">
+        <h1>SESSIONE IN CORSO</h1>
+    </div> 
+    <div class="row mt-4">
+        <p>Errore nell'invio dei dati al visore.</p>
+    </div>
+    <hr>
+    <div class="row justify-content-center">
+        <button onclick="redirectSession();" class="btn btn-light btn-lg" style="width: auto;">Riprova</button>
+    </div>
+</div>
+<script src="/static/sessions_button.js"></script>
+
+<script>
+    function redirectSession(){
+        window.location.href = "{{url_for('confirm_session')}}"
+    }
+</script>
+{% endblock %}

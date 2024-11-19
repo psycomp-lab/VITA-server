@@ -8,15 +8,17 @@ db = SQLAlchemy()
 
 class Session(db.Model):
     __tablename__ = 'users_session'
-    user_id = Column('user_id',String,ForeignKey('users.id'),primary_key=True)
+    user_id = Column('user_id',String,ForeignKey('users.code'),primary_key=True)
     number = Column(Integer,primary_key=True,default=1)
     exercise = Column(Integer, ForeignKey('exercises.id'), primary_key=True)
     result = Column(LargeBinary,nullable=True)
+    info = Column(String,nullable=True)
     def __init__(self,user_id:int,number:int,exercise:int) -> None:
         self.user_id = user_id
         self.number = number
         self.exercise = exercise
         self.result = None
+        self.info = None
 
 
 
@@ -81,3 +83,13 @@ class Exercise(db.Model):
             'name' : self.name
         }
     
+class UserExerciseInfo(db.Model):
+    __tablename__ = 'info'
+    user_id = Column('user_id',String,ForeignKey('users.id'),primary_key=True)
+    exercise_id = Column(Integer, ForeignKey('exercises.id'), primary_key=True)
+    info = Column(String)
+
+    def __init__(self,user_id:int,exercise_id:int,info:str) -> None:
+        self.user_id = user_id
+        self.exercise_id = exercise_id
+        self.info = info

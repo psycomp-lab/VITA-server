@@ -27,27 +27,7 @@
             
         </div>
     </div>
-{% block socketio%}
-    <script>
-        var socket = io();
 
-        socket.on('connect', function() {
-            console.log('Connected to server...');
-            socket.emit('connected');
-        });
-
-        socket.on("disconnect-vr",function(){
-            console.log("socket disconnected");
-            alert("Il visore è stato disconnesso.");
-            window.location.href = "/connect-vr"; 
-        })
-
-        socket.on("exercise",function(id){
-            console.log("finished "+id)
-            document.getElementById(id).setAttribute('class','ms-2 fa-xl fa-solid fa-check');
-        })
-        
-    </script>
-{% endblock %}
+    <script src="/static/socketio.js"></script>
 
 </body>

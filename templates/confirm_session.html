@@ -1,0 +1,87 @@
+{% extends 'base.html'%}
+
+{% block body %}
+<div class="container position-relative">
+    <div class="mt-1">
+        <h1>SESSIONE</h1>
+    </div> 
+    <div class="row mt-4">
+        <div class="col">
+            <h3>{{user.name}}</h3>
+        </div>
+        <div class="col">
+            <h3>{{user.surname}}</h3>
+        </div>
+        <div class="col">
+            <h3>{{user.code}}</h3>
+        </div>
+    </div>
+    <hr>
+    <div class="justify-content-center">
+        <p>Se vuoi saltare degli esercizi, seleziona quelli già svolti, altrimenti premi INIZIA</p>
+    </div>
+    <div class="d-lg-flex d-md-inline-block mt-4 justify-content-evenly">
+        <input type="hidden" id="user_id" name="user_id" value="{{user.code}}">
+        <input type="hidden" id="user_session" name="user_session" value="{{session}}">
+
+        <div id="exercises">
+            <table class="table table_custom text-white">
+                <tbody>
+                {% for ex in data %}
+                <tr>
+                    <td>{{ex.name}}</td>
+                    {% if ex.id in requested_ex %}
+                        <!-- Use the correct function 'updateDB' in the onclick event -->
+                        <td><button id="{{ex.id}}" class="btn btn-primary" onclick="updateDB({{ex.id}})">
+                            <i class="mx-4 fa-xl fa-solid fa-check"></i></button></td>
+                    {% else %}
+                        <td><i class="mx-4 fa-xl fa-solid fa-check"></i></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row mt-4 justify-content-end">
+        <div class="col-sm-3">
+            <a href="{{url_for('session_start')}}" class="btn btn-lg btn-primary" role="button">Inizia</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- The 'updateDB' function defined here -->
+<script>
+    function updateDB(ex_id){
+        const user_id = document.getElementById("user_id").value;
+        const user_session = document.getElementById("user_session").value;
+
+        // AJAX request to the server with three parameters
+        $.ajax({
+            url: '/register_ex',  // Replace with your Flask route URL
+            type: 'POST',              // Request type
+            data: {
+                ex_id: ex_id,           // First parameter
+                user_id: user_id,       // Second parameter
+                user_session: user_session // Third parameter
+            },
+            success: function(response) {
+
+                console.log('Success:', response);
+
+                // Find the button using its ID (which is ex_id)
+                const button = document.getElementById(ex_id);
+
+                // Replace the button with the <i> element (check icon)
+                button.parentElement.innerHTML = '<i class="mx-4 fa-xl fa-solid fa-check"></i>';
+            },
+            error: function(xhr, status, error) {
+                // Handle error
+                console.log('Error:', error);
+            }
+        });
+    }
+</script>
+{% endblock body %}
