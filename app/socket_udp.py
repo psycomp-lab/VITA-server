@@ -210,17 +210,17 @@ def main():
                         tokens = [token.replace("_", " ") for token in tokens]
                         number = tokens[0]
                         id = tokens[1]
-                        pa_1 = tokens[2]
-                        pa_2 = tokens[3]
-                        pa_3 = tokens[4]
-                        yell = tokens[5]
-                        animal = tokens[6]
-                        w1 = tokens[7]
-                        c1 = tokens[8]
-                        w2 = tokens[9]
-                        c2 = tokens[10]
-                        w3 = tokens[11]
-                        c3 = tokens[12]
+                        pa_1 = int(tokens[2])
+                        pa_2 = int(tokens[3])
+                        pa_3 = int(tokens[4])
+                        yell = int(tokens[6])
+                        animal = int(tokens[7])
+                        w1 = tokens[8]
+                        c1 = tokens[9]
+                        w2 = tokens[10]
+                        c2 = tokens[11]
+                        w3 = tokens[12]
+                        c3 = tokens[13]
                         if number == int(req):
                             index += 1
                             with app.app_context():
