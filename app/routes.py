@@ -374,7 +374,7 @@ def download_csv():
             word3 = s.word3
             correct_word3 = s.correct_word3
 
-            writer.writerow([user_name, user_surname, code, s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
+            writer.writerow([user_name, user_surname, f"'{code}'", s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
             yell_score,animal_score,word1,correct_word1,word2,correct_word2,word3,correct_word3])
 
     output.seek(0)
@@ -431,7 +431,7 @@ def create_csv(n):
             word3 = s.word3
             correct_word3 = s.correct_word3
 
-            writer.writerow([user_name, user_surname, user_id, s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
+            writer.writerow([user_name, user_surname, f"'{user_id}'", s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
             yell_score,animal_score,word1,correct_word1,word2,correct_word2,word3,correct_word3])
 
     data.seek(0)

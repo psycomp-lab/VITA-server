@@ -207,8 +207,9 @@ def main():
                     if msg.decode().startswith("FINISHED_EXERCISE "):
                         msg = msg.decode()
                         tokens = msg.split(" ")
+                        tokens = tokens[1:]
                         tokens = [token.replace("_", " ") for token in tokens]
-                        number = tokens[0]
+                        number = int(tokens[0])
                         id = tokens[1]
                         pa_1 = int(tokens[2])
                         pa_2 = int(tokens[3])
@@ -239,7 +240,7 @@ def main():
                                     session.correct_word3 = c3 
                                     db.session.commit()
                                     socketio.emit("exercise", number)
-                                    print(f"****Updated session {number} for user {id} with result: {msg.decode()}")
+                                    print(f"****Updated session {number} for user {id} with result: {msg}")
                                 else:
                                     print(f"****No session found for user {id} with number {number}")
 

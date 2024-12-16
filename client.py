@@ -33,7 +33,7 @@ def receive_beacon_and_send_ack():
                 client_socket.sendto(DATA_ACK, addr)
             elif msg.decode().startswith("WAITING"):
                 parts = msg.decode().split(" ")
-                s = "FINISHED_EXERCISE "+parts[1]+" 1933858 bello"
+                s = f"FINISHED_EXERCISE {parts[1]} 000 13 9 8 30 0 10 SETE_KAWTA FANALE/GOBBA/SETE Fede,_ti_amo. FARINA/GRILLO/PEPE/DENARO Dito,_senzano,_forno. BIBITA/DITO/CUOIO/ZANZARA/FORNO"
                 print(s)
                 client_socket.sendto(s.encode("utf-8"),addr)
             elif msg == b"RESTART":
