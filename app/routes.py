@@ -148,7 +148,7 @@ def choose_workout():
             n_session = highest_session.number
 
             for s in sessions:
-                if s.result is None:
+                if s.pa_1 is None:
                     flash("Unfished session","session_alert")
             n_session += 1
 
@@ -214,14 +214,14 @@ def restart_session():
 def continue_session():
     
     user_code = session.get("code")  # Get the user code from the session
-    highest_session = Session.query.filter_by(user_id=user_code).filter(Session.result.is_(None)).order_by(Session.number.desc()).first()
+    highest_session = Session.query.filter_by(user_id=user_code).filter(Session.pa_1.is_(None)).order_by(Session.number.desc()).first()
     
     if highest_session:
         # Get the session number
         n = highest_session.number
         
         # Find all exercises with the same session number
-        exercises = Session.query.filter_by(user_id=user_code, number=n).filter(Session.result.is_(None)).all()
+        exercises = Session.query.filter_by(user_id=user_code, number=n).filter(Session.pa_1.is_(None)).all()
         list_exercises = []
         for ex in exercises:
             list_exercises.append(ex.exercise)
@@ -290,8 +290,11 @@ def handle_update():
         session = Session.query.filter_by(user_id=user_id, number=user_session, exercise=ex_id).first()
         if session is None:
             return jsonify({"status": "error", "message": "Session not found"}), 404
-        
-        session.result = b"NON REGISTRATO"
+        session.pa_1 = 0
+        session.pa_2 = 0
+        session.pa_3 = 0
+        session.yell_score = 0
+        session.animal_score = 0
         get_data().get("list_exercises").remove(int(ex_id))
         db.session.commit()
         return jsonify({"status": "success", "message": "Exercise updated successfully."}), 200
@@ -319,7 +322,7 @@ def save():
 @app.route("/get_sessions")
 def get_sessions():
     if session.get("code"):
-        s = Session.query.filter_by(user_id=session.get("code")).filter(Session.result.isnot(None)).order_by(Session.number.desc()).first()
+        s = Session.query.filter_by(user_id=session.get("code")).filter(Session.pa_1.isnot(None)).order_by(Session.number.desc()).first()
         out = []
         if s:
             for x in range(1,s.number+1):
@@ -337,7 +340,7 @@ def download_csv():
     writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'PA_1','PA_2','PA_3','TOT_PA','YELL_SCORE','ANIMAL_SCORE',
                      'WORD_1','CORRECT_1','WORD_2','CORRECT_2','WORD_3','CORRECT_3'])
 
-    sessions = Session.query.filter_by(user_id=code).all()
+    sessions = Session.query.filter_by(user_id=code).filter(Session.pa_1.isnot(None)).all()
 
     if not sessions:
         return "No sessions found", 404
@@ -358,18 +361,18 @@ def download_csv():
             exercise_name = exercise.name
             user_name = user.name
             user_surname = user.surname
-            peso = s.info if s.result else "No info"
-            pa_1 = user.pa_1
-            pa_2 = user.pa_2
-            pa_3 = user.pa_3
-            yell_score = user.yell_score
-            animal_score = user.animal_score
-            word1 = user.word1
-            correct_word1 = user.correct_word1
-            word2 = user.word2
-            correct_word2 = user.correct_word2
-            word3 = user.word3
-            correct_word3 = user.correct_word3
+            peso = s.info if s.info else "No info"
+            pa_1 = s.pa_1
+            pa_2 = s.pa_2
+            pa_3 = s.pa_3
+            yell_score = s.yell_score
+            animal_score = s.animal_score
+            word1 = s.word1
+            correct_word1 = s.correct_word1
+            word2 = s.word2
+            correct_word2 = s.correct_word2
+            word3 = s.word3
+            correct_word3 = s.correct_word3
 
             writer.writerow([user_name, user_surname, code, s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
             yell_score,animal_score,word1,correct_word1,word2,correct_word2,word3,correct_word3])
@@ -415,18 +418,18 @@ def create_csv(n):
             exercise_name = exercise.name
             user_name = user.name
             user_surname = user.surname
-            peso = s.info if s.result else "No info"
-            pa_1 = user.pa_1
-            pa_2 = user.pa_2
-            pa_3 = user.pa_3
-            yell_score = user.yell_score
-            animal_score = user.animal_score
-            word1 = user.word1
-            correct_word1 = user.correct_word1
-            word2 = user.word2
-            correct_word2 = user.correct_word2
-            word3 = user.word3
-            correct_word3 = user.correct_word3
+            peso = s.info if s.info else "No info"
+            pa_1 = s.pa_1
+            pa_2 = s.pa_2
+            pa_3 = s.pa_3
+            yell_score = s.yell_score
+            animal_score = s.animal_score
+            word1 = s.word1
+            correct_word1 = s.correct_word1
+            word2 = s.word2
+            correct_word2 = s.correct_word2
+            word3 = s.word3
+            correct_word3 = s.correct_word3
 
             writer.writerow([user_name, user_surname, user_id, s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
             yell_score,animal_score,word1,correct_word1,word2,correct_word2,word3,correct_word3])
