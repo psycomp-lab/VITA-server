@@ -334,7 +334,8 @@ def download_csv():
     writer = csv.writer(output)
     code = session["code"]
 
-    writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'Risultato'])
+    writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'PA_1','PA_2','PA_3','TOT_PA','YELL_SCORE','ANIMAL_SCORE',
+                     'WORD_1','CORRECT_1','WORD_2','CORRECT_2','WORD_3','CORRECT_3'])
 
     sessions = Session.query.filter_by(user_id=code).all()
 
@@ -345,7 +346,8 @@ def download_csv():
     writer = csv.writer(data)
     
     # Write headers if needed
-    writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'Risultato'])
+    writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'PA_1','PA_2','PA_3','TOT_PA','YELL_SCORE','ANIMAL_SCORE',
+                     'WORD_1','CORRECT_1','WORD_2','CORRECT_2','WORD_3','CORRECT_3'])
 
     for s in sessions:
         
@@ -356,9 +358,21 @@ def download_csv():
             exercise_name = exercise.name
             user_name = user.name
             user_surname = user.surname
-            result = s.result.decode() if s.result else "No result"
             peso = s.info if s.result else "No info"
-            writer.writerow([user_name, user_surname, code, s.number, exercise_name, peso, result])
+            pa_1 = user.pa_1
+            pa_2 = user.pa_2
+            pa_3 = user.pa_3
+            yell_score = user.yell_score
+            animal_score = user.animal_score
+            word1 = user.word1
+            correct_word1 = user.correct_word1
+            word2 = user.word2
+            correct_word2 = user.correct_word2
+            word3 = user.word3
+            correct_word3 = user.correct_word3
+
+            writer.writerow([user_name, user_surname, code, s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
+            yell_score,animal_score,word1,correct_word1,word2,correct_word2,word3,correct_word3])
 
     output.seek(0)
 
@@ -389,7 +403,8 @@ def create_csv(n):
     writer = csv.writer(data)
     
     # Write headers if needed
-    writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'Risultato'])
+    writer.writerow(['Nome', 'Cognome', 'ID', 'Sessione', 'Esercizio','Peso/Resistenza', 'PA_1','PA_2','PA_3','TOT_PA','YELL_SCORE','ANIMAL_SCORE',
+                     'WORD_1','CORRECT_1','WORD_2','CORRECT_2','WORD_3','CORRECT_3'])
 
     for s in sessions:
         
@@ -400,9 +415,21 @@ def create_csv(n):
             exercise_name = exercise.name
             user_name = user.name
             user_surname = user.surname
-            result = s.result.decode() if s.result else "No result"
             peso = s.info if s.result else "No info"
-            writer.writerow([user_name, user_surname, user_id, session_number, exercise_name, peso, result])
+            pa_1 = user.pa_1
+            pa_2 = user.pa_2
+            pa_3 = user.pa_3
+            yell_score = user.yell_score
+            animal_score = user.animal_score
+            word1 = user.word1
+            correct_word1 = user.correct_word1
+            word2 = user.word2
+            correct_word2 = user.correct_word2
+            word3 = user.word3
+            correct_word3 = user.correct_word3
+
+            writer.writerow([user_name, user_surname, user_id, s.number, exercise_name, peso,pa_1,pa_2,pa_3,pa_1+pa_2+pa_3,
+            yell_score,animal_score,word1,correct_word1,word2,correct_word2,word3,correct_word3])
 
     data.seek(0)
 

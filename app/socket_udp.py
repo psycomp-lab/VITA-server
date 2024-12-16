@@ -207,19 +207,39 @@ def main():
                     if msg.decode().startswith("FINISHED_EXERCISE "):
                         msg = msg.decode()
                         tokens = msg.split(" ")
-                        number = int(tokens[1])
-                        id = tokens[2]
-                        result = tokens[3].encode("utf-8")
-
+                        tokens = [token.replace("_", " ") for token in tokens]
+                        number = tokens[0]
+                        id = tokens[1]
+                        pa_1 = tokens[2]
+                        pa_2 = tokens[3]
+                        pa_3 = tokens[4]
+                        yell = tokens[5]
+                        animal = tokens[6]
+                        w1 = tokens[7]
+                        c1 = tokens[8]
+                        w2 = tokens[9]
+                        c2 = tokens[10]
+                        w3 = tokens[11]
+                        c3 = tokens[12]
                         if number == int(req):
                             index += 1
                             with app.app_context():
                                 session = Session.query.filter_by(user_id=id, exercise=number).order_by(Session.number.desc()).first()
                                 if session:
-                                    session.result = result
+                                    session.pa_1 = pa_1 
+                                    session.pa_2 = pa_2
+                                    session.pa_3 = pa_3
+                                    session.yell_score = yell
+                                    session.animal_score = animal
+                                    session.word1= w1
+                                    session.correct_word1 = c1 
+                                    session.word2 = w2
+                                    session.correct_word2= c2
+                                    session.word3 = w3
+                                    session.correct_word3 = c3 
                                     db.session.commit()
                                     socketio.emit("exercise", number)
-                                    print(f"****Updated session {number} for user {id} with result: {result}")
+                                    print(f"****Updated session {number} for user {id} with result: {msg.decode()}")
                                 else:
                                     print(f"****No session found for user {id} with number {number}")
 
@@ -238,8 +258,6 @@ def main():
                                 index += 1
                                 session = Session.query.filter_by(user_id=saved_data.get("id"), exercise=req).order_by(Session.number.desc()).first()
                                 if session:
-                                    session.result = b"NON REGISTRATO"
-                                    db.session.commit()
                                     socketio.emit("exercise", req)
                                     print(f"****Result for exercise {req} not registered")
                     elif msg == b"END_SESSION":

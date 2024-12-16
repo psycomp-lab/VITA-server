@@ -11,16 +11,36 @@ class Session(db.Model):
     user_id = Column('user_id',String,ForeignKey('users.code'),primary_key=True)
     number = Column(Integer,primary_key=True,default=1)
     exercise = Column(Integer, ForeignKey('exercises.id'), primary_key=True)
-    result = Column(LargeBinary,nullable=True)
     info = Column(String,nullable=True)
+    pa_1 = Column(Integer)
+    pa_2 = Column(Integer)
+    pa_3 = Column(Integer)
+    yell_score = Column(Integer)
+    animal_score = Column(Integer)
+    word1 = Column(String)
+    correct_word1 = Column(String)
+    word2 = Column(String)
+    correct_word2 = Column(String)
+    word3 = Column(String)
+    correct_word3 = Column(String)
+        
     def __init__(self,user_id:int,number:int,exercise:int) -> None:
         self.user_id = user_id
         self.number = number
         self.exercise = exercise
         self.result = None
         self.info = None
-
-
+        self.pa_1 = None
+        self.pa_2 = None
+        self.pa_3 = None
+        self.yell_score = None
+        self.animal_score = None
+        self.word1 = None
+        self.correct_word1 = None
+        self.word2 = None
+        self.correct_word2 = None
+        self.word3 = None
+        self.correct_word3 = None
 
     def __repr__(self) -> str:
         return f'Sessione Nº {self.number}'
@@ -39,10 +59,9 @@ class Session(db.Model):
     
 class User(db.Model):   
     __tablename__ = 'users'
-    id = Column(Integer, primary_key = True)
     name = Column(String(20))
     surname = Column(String(20))
-    code = Column(String(20), unique = True)
+    code = Column(String(20), primary_key = True)
     dob = Column(Date)
     sex = Column(String(1))
     info1 = Column(String(250),default = "")
@@ -62,8 +81,8 @@ class User(db.Model):
     
 class TrainingExercise(db.Model):
     __tablename__ = 'training_exercise'
-    training_id = Column('training_id',Integer,ForeignKey('trainings.id'),primary_key=True)
-    exercise_id = Column('exercise_id',Integer,ForeignKey('exercises.id'),primary_key=True)
+    training_id = Column('training_id',Integer,ForeignKey('trainings.id'),primary_key=True,nullable=False)
+    exercise_id = Column('exercise_id',Integer,ForeignKey('exercises.id'),primary_key=True,nullable=False)
 
 class Training(db.Model):
     __tablename__ = 'trainings'
@@ -85,11 +104,11 @@ class Exercise(db.Model):
     
 class UserExerciseInfo(db.Model):
     __tablename__ = 'info'
-    user_id = Column('user_id',String,ForeignKey('users.id'),primary_key=True)
+    user_id = Column('user_id', String, ForeignKey('users.code'), primary_key=True)
     exercise_id = Column(Integer, ForeignKey('exercises.id'), primary_key=True)
     info = Column(String)
 
-    def __init__(self,user_id:int,exercise_id:int,info:str) -> None:
+    def __init__(self, user_id: int, exercise_id: int, info: str) -> None:
         self.user_id = user_id
         self.exercise_id = exercise_id
         self.info = info
